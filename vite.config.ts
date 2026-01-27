@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    // 确保无论环境变量名是 AI_API_KEY 还是 API_KEY 都能正确注入
+    // 使用 AI_API_KEY 作为通用密钥，不再区分 GEMINI
     const primaryKey = env.AI_API_KEY || env.API_KEY || '';
     
     return {
