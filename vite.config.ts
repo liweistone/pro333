@@ -9,8 +9,10 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    // 使用 AI_API_KEY 作为通用密钥，不再区分 GEMINI
+    // 自动回退机制：如果没有特定的子 KEY，统一使用 AI_API_KEY
     const primaryKey = env.AI_API_KEY || env.API_KEY || '';
+    const drawKey = env.DRAW_API_KEY || primaryKey;
+    const analysisKey = env.ANALYSIS_API_KEY || primaryKey;
     
     return {
       server: {
@@ -20,12 +22,23 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(primaryKey),
-        'process.env.DRAW_API_KEY': JSON.stringify(env.DRAW_API_KEY || primaryKey),
-        'process.env.ANALYSIS_API_KEY': JSON.stringify(env.ANALYSIS_API_KEY || primaryKey)
+        'process.env.DRAW_API_KEY': JSON.stringify(drawKey),
+        'process.env.ANALYSIS_API_KEY': JSON.stringify(analysisKey)
       },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+        }
+      },
+      build: {
+        outDir: 'dist',
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
+              'ui-vendor': ['react', 'react-dom', 'lucide-react']
+            }
+          }
         }
       }
     };

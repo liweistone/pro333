@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Layers, Play, Loader2, Download, Package } from 'lucide-react';
 import { createGenerationTask, getTaskStatus } from './services/apiService';
 import { GenerationTask, GenerationConfig } from './types';
-import { saveAs } from 'file-saver';
 
 const RATIOS = ['1:1', '3:4', '4:3', '9:16', '16:9'];
 const RESOLUTIONS: Array<'1K' | '2K' | '4K'> = ['1K', '2K', '4K'];
@@ -13,6 +12,24 @@ const App: React.FC = () => {
   const [prompts, setPrompts] = useState('');
   const [config, setConfig] = useState<GenerationConfig>({ ratio: '1:1', resolution: '1K', references: [] });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 原生下载函数，替代 file-saver 的 saveAs
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      window.open(url, '_blank');
+    }
+  };
 
   const startPolling = async (taskId: string) => {
     let attempts = 0;
@@ -63,11 +80,25 @@ const App: React.FC = () => {
       </aside>
       <main className="flex-1 p-8 overflow-y-auto grid grid-cols-3 gap-6">
         {tasks.map(t => (
-          <div key={t.id} className="bg-white p-4 rounded-2xl border">
-            <div className="aspect-square bg-slate-100 rounded-xl overflow-hidden mb-3">
-              {t.imageUrl ? <img src={t.imageUrl} className="w-full h-full object-cover" /> : <div className="h-full flex items-center justify-center font-bold text-slate-300">{t.progress}%</div>}
+          <div key={t.id} className="bg-white p-4 rounded-2xl border flex flex-col">
+            <div className="aspect-square bg-slate-100 rounded-xl overflow-hidden mb-3 relative group">
+              {t.imageUrl ? (
+                <>
+                  <img src={t.imageUrl} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <button 
+                      onClick={() => handleDownload(t.imageUrl!, `image-${t.id.slice(0,5)}.png`)}
+                      className="p-3 bg-white rounded-full text-indigo-600 hover:bg-indigo-50"
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="h-full flex items-center justify-center font-bold text-slate-300">{t.progress}%</div>
+              )}
             </div>
-            <p className="text-[10px] truncate opacity-60">{t.prompt}</p>
+            <p className="text-[10px] truncate opacity-60 flex-1">{t.prompt}</p>
           </div>
         ))}
       </main>
