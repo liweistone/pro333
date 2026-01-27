@@ -16,15 +16,16 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
     setDownloadingId(item.id);
     try {
       const response = await fetch(item.url);
-      const blob = await response.blob();
+      // Added type cast to Blob to fix 'unknown' type error during fetch result processing
+      const blob = (await response.blob()) as Blob;
       const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
       
       // 生成友好的文件名
       const safePrompt = item.prompt.slice(0, 15).replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '-');
       const fileName = `grsai-${safePrompt}-${item.id.slice(-4)}.png`;
       
+      const link = document.createElement('a');
+      link.href = blobUrl;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();

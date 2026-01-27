@@ -190,7 +190,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
           </div>
         </div>
 
-        {/* 功能矩阵 - 移除宽度限制，实现文字横向舒展 */}
+        {/* 功能矩阵 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
           {/* 智拍大师 Pro */}
           <button onClick={() => handleCardClick('pro')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-blue-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
@@ -199,7 +199,6 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
               <Move3d className="w-10 h-10" />
             </div>
             <h2 className="text-4xl font-black text-white mb-6 tracking-tight">智拍大师 Pro</h2>
-            {/* 移除 max-w-sm，让文字横向到边 */}
             <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
               定义 3D 视觉新标准。通过高精度姿态、骨骼与人体轮廓控制，结合内置的专业摄影棚布光引擎，重塑商业人像生命力，实现极致的构图自由。
             </p>
@@ -244,9 +243,9 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-emerald-600/10 border-emerald-600/20 group-hover:bg-emerald-600 group-hover:text-white text-emerald-400 transition-all duration-700 mb-8 shadow-xl">
               <BrainCircuit className="w-10 h-10" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">图像生成全流程</h2>
+            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">全链路商业视觉智造引擎</h2>
             <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
-              主图/海报生成，gemini3开启深度逻辑思考模式,深度产品策划+出图全自动化。AI 专家将深入解构产品卖点与行业痛点，为您自动生成极具转化力的电商全链路策划方案及高品质视觉提示词并直接生成图像。
+              集成深度逻辑推理模型，实现从产品策略解构到视觉内容产出的全流程自动化闭环。AI 专家将深度解构产品核心卖点与市场痛点，为您智造兼具品牌深度与高转化潜力的电商全链路策划方案、精准视觉提示词，并同步驱动渲染引擎生成高品质商业图像。
             </p>
             <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-emerald-400 group-hover:gap-6 transition-all">
               一键脑暴 <ArrowRight className="w-4 h-4" />

@@ -7,7 +7,7 @@ import ImageGallery from './components/ImageGallery';
 import { 
   Upload, FileText, BarChart3, Image as ImageIcon, Loader2, Copy, CheckCircle2,
   ArrowRightLeft, X, Plus, BrainCircuit, AlertTriangle, LayoutDashboard,
-  Target, Zap, ShieldCheck, ShoppingBag, Radio, MessageSquare
+  Target, Zap, ShieldCheck, ShoppingBag, Radio, MessageSquare, Send
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<AppResponse | null>(null);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<'analysis' | 'prompts'>('analysis');
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [promptsText, setPromptsText] = useState('');
@@ -45,6 +46,39 @@ const App: React.FC = () => {
     setCurrentStep('generation');
   };
 
+  // 更新特定提示词的文本
+  const updatePromptText = (type: 'pain' | 'scenario', catIdx: number, promptIdx: number, newText: string) => {
+    if (!analysisResult) return;
+    setAnalysisResult(prev => {
+        if (!prev) return null;
+        // 深度拷贝以触发 React 更新
+        const next = JSON.parse(JSON.stringify(prev));
+        if (type === 'pain') {
+            next.painPointPrompts.prompts[promptIdx].fullPrompt = newText;
+        } else {
+            next.scenarioPrompts[catIdx].prompts[promptIdx].fullPrompt = newText;
+        }
+        return next;
+    });
+  };
+
+  // 同步单条提示词到生成模块
+  const syncSinglePrompt = (id: string, text: string) => {
+    if (!text.trim()) return;
+    setPromptsText(prev => {
+        const existing = prev.trim();
+        return existing ? `${existing}\n${text}` : text;
+    });
+    setSyncStatus(prev => new Set(prev).add(id));
+    setTimeout(() => {
+        setSyncStatus(prev => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+        });
+    }, 2000);
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -54,7 +88,7 @@ const App: React.FC = () => {
         setImage(base);
         setReferenceImages(prev => prev.includes(base) ? prev : [base, ...prev].slice(0, 3));
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(file as Blob);
     }
   };
 
@@ -63,6 +97,7 @@ const App: React.FC = () => {
     setAnalysisLoading(true);
     setAnalysisError(null);
     setAnalysisResult(null);
+    setSyncStatus(new Set());
     try {
       const data = await generatePlan(specs, image || undefined);
       setAnalysisResult(data);
@@ -154,7 +189,7 @@ const App: React.FC = () => {
                 </button>
                 {analysisResult && (
                   <button onClick={autoFillPromptsFromAnalysis} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl flex items-center justify-center gap-2 italic">
-                    <ArrowRightLeft className="w-4 h-4" /> 同步视觉提示词
+                    <ArrowRightLeft className="w-4 h-4" /> 同步所有提示词
                   </button>
                 )}
               </div>
@@ -326,32 +361,58 @@ const App: React.FC = () => {
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 gap-4 animate-in fade-in duration-500">
-                       {analysisResult?.painPointPrompts?.prompts?.map((p,i) => (
-                          <div key={`p-${i}`} className="bg-white p-6 rounded-[2rem] border border-slate-200 hover:border-indigo-600 transition-all group flex flex-col">
-                             <div className="flex items-center gap-2 mb-3">
-                                <div className="bg-indigo-50 text-indigo-600 p-1.5 rounded-lg"><Zap className="w-3.5 h-3.5" /></div>
-                                <h5 className="text-[11px] font-black text-slate-900">{p.planTitle}</h5>
-                             </div>
-                             <p className="text-[10px] text-slate-500 line-clamp-4 italic mb-6 leading-relaxed flex-1">"{p.fullPrompt}"</p>
-                             <button onClick={() => { if(p.fullPrompt) { navigator.clipboard.writeText(p.fullPrompt); setCopyStatus(`c-${i}`); setTimeout(()=>setCopyStatus(null),2000); } }} className="w-full py-3 rounded-xl bg-slate-50 group-hover:bg-indigo-600 group-hover:text-white text-[10px] font-black transition-all uppercase tracking-widest flex items-center justify-center gap-2">
-                                {copyStatus === `c-${i}` ? <CheckCircle2 className="w-3.5 h-3.5"/> : <Copy className="w-3.5 h-3.5"/>}
-                                {copyStatus === `c-${i}` ? '已复制' : '复制提示词'}
-                             </button>
-                          </div>
-                       ))}
-                       {analysisResult?.scenarioPrompts?.map(sp => sp.prompts?.map((p,i) => (
-                          <div key={`s-${i}`} className="bg-white p-6 rounded-[2rem] border border-slate-200 hover:border-emerald-600 transition-all group flex flex-col">
-                             <div className="flex items-center gap-2 mb-3">
-                                <div className="bg-emerald-50 text-emerald-600 p-1.5 rounded-lg"><Target className="w-3.5 h-3.5" /></div>
-                                <h5 className="text-[11px] font-black text-slate-900">{p.planTitle}</h5>
-                             </div>
-                             <p className="text-[10px] text-slate-500 line-clamp-4 italic mb-6 leading-relaxed flex-1">"{p.fullPrompt}"</p>
-                             <button onClick={() => { if(p.fullPrompt) { navigator.clipboard.writeText(p.fullPrompt); setCopyStatus(`cs-${i}`); setTimeout(()=>setCopyStatus(null),2000); } }} className="w-full py-3 rounded-xl bg-slate-50 group-hover:bg-emerald-600 group-hover:text-white text-[10px] font-black transition-all uppercase tracking-widest flex items-center justify-center gap-2">
-                                {copyStatus === `cs-${i}` ? <CheckCircle2 className="w-3.5 h-3.5"/> : <Copy className="w-3.5 h-3.5"/>}
-                                {copyStatus === `cs-${i}` ? '已复制' : '复制提示词'}
-                             </button>
-                          </div>
-                       )))}
+                       {analysisResult?.painPointPrompts?.prompts?.map((p,i) => {
+                          const cardId = `pain-${i}`;
+                          return (
+                            <div key={cardId} className="bg-white p-6 rounded-[2rem] border border-slate-200 hover:border-indigo-600 transition-all group flex flex-col">
+                               <div className="flex items-center gap-2 mb-3">
+                                  <div className="bg-indigo-50 text-indigo-600 p-1.5 rounded-lg"><Zap className="w-3.5 h-3.5" /></div>
+                                  <h5 className="text-[11px] font-black text-slate-900">{p.planTitle}</h5>
+                               </div>
+                               <textarea 
+                                  value={p.fullPrompt}
+                                  onChange={(e) => updatePromptText('pain', 0, i, e.target.value)}
+                                  className="text-[10px] text-slate-500 italic mb-6 leading-relaxed flex-1 bg-slate-50/50 p-3 rounded-xl border border-transparent focus:border-indigo-200 focus:bg-white focus:outline-none resize-none min-h-[120px] transition-all"
+                               />
+                               <div className="grid grid-cols-2 gap-2">
+                                 <button onClick={() => syncSinglePrompt(cardId, p.fullPrompt)} className={`py-3 rounded-xl text-[10px] font-black transition-all uppercase tracking-widest flex items-center justify-center gap-2 border ${syncStatus.has(cardId) ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white'}`}>
+                                    {syncStatus.has(cardId) ? <CheckCircle2 className="w-3.5 h-3.5"/> : <Send className="w-3.5 h-3.5"/>}
+                                    {syncStatus.has(cardId) ? '已同步' : '同步至生成'}
+                                 </button>
+                                 <button onClick={() => { if(p.fullPrompt) { navigator.clipboard.writeText(p.fullPrompt); setCopyStatus(cardId); setTimeout(()=>setCopyStatus(null),2000); } }} className="py-3 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 text-[10px] font-black transition-all uppercase tracking-widest flex items-center justify-center gap-2">
+                                    {copyStatus === cardId ? <CheckCircle2 className="w-3.5 h-3.5"/> : <Copy className="w-3.5 h-3.5"/>}
+                                    {copyStatus === cardId ? '已复制' : '复制'}
+                                 </button>
+                               </div>
+                            </div>
+                          );
+                       })}
+                       {analysisResult?.scenarioPrompts?.map((sp, catIdx) => sp.prompts?.map((p,i) => {
+                          const cardId = `scenario-${catIdx}-${i}`;
+                          return (
+                            <div key={cardId} className="bg-white p-6 rounded-[2rem] border border-slate-200 hover:border-emerald-600 transition-all group flex flex-col">
+                               <div className="flex items-center gap-2 mb-3">
+                                  <div className="bg-emerald-50 text-emerald-600 p-1.5 rounded-lg"><Target className="w-3.5 h-3.5" /></div>
+                                  <h5 className="text-[11px] font-black text-slate-900">{p.planTitle}</h5>
+                               </div>
+                               <textarea 
+                                  value={p.fullPrompt}
+                                  onChange={(e) => updatePromptText('scenario', catIdx, i, e.target.value)}
+                                  className="text-[10px] text-slate-500 italic mb-6 leading-relaxed flex-1 bg-slate-50/50 p-3 rounded-xl border border-transparent focus:border-emerald-200 focus:bg-white focus:outline-none resize-none min-h-[120px] transition-all"
+                               />
+                               <div className="grid grid-cols-2 gap-2">
+                                 <button onClick={() => syncSinglePrompt(cardId, p.fullPrompt)} className={`py-3 rounded-xl text-[10px] font-black transition-all uppercase tracking-widest flex items-center justify-center gap-2 border ${syncStatus.has(cardId) ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white border-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white'}`}>
+                                    {syncStatus.has(cardId) ? <CheckCircle2 className="w-3.5 h-3.5"/> : <Send className="w-3.5 h-3.5"/>}
+                                    {syncStatus.has(cardId) ? '已同步' : '同步至生成'}
+                                 </button>
+                                 <button onClick={() => { if(p.fullPrompt) { navigator.clipboard.writeText(p.fullPrompt); setCopyStatus(cardId); setTimeout(()=>setCopyStatus(null),2000); } }} className="py-3 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 text-[10px] font-black transition-all uppercase tracking-widest flex items-center justify-center gap-2">
+                                    {copyStatus === cardId ? <CheckCircle2 className="w-3.5 h-3.5"/> : <Copy className="w-3.5 h-3.5"/>}
+                                    {copyStatus === cardId ? '已复制' : '复制'}
+                                 </button>
+                               </div>
+                            </div>
+                          );
+                       }))}
                     </div>
                   )}
                 </div>
@@ -376,7 +437,10 @@ const App: React.FC = () => {
                    <div className="flex items-center justify-between px-1"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">核心参考图 ({referenceImages.length}/3)</label>{referenceImages.length > 0 && <button onClick={()=>setReferenceImages([])} className="text-[9px] text-indigo-600 font-bold hover:underline">清空</button>}</div>
                    <div onClick={()=>fileInputRefSidebar.current?.click()} className="h-32 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 flex items-center justify-center p-2 cursor-pointer hover:border-indigo-400 transition-all">
                       {referenceImages.length === 0 ? <Plus className="w-6 h-6 text-slate-300" /> : <div className="grid grid-cols-3 gap-1.5 w-full">{referenceImages.map((u,i)=><img key={i} src={u} className="aspect-square object-cover rounded-lg border border-white shadow-sm"/>)}</div>}
-                      <input type="file" ref={fileInputRefSidebar} className="hidden" multiple onChange={(e)=> { if(e.target.files) { const files = Array.from(e.target.files); const promises = files.map(file => new Promise<string>(r => { const reader = new FileReader(); reader.onload = () => r(reader.result as string); reader.readAsDataURL(file); })); Promise.all(promises).then(urls => setReferenceImages(prev => [...prev, ...urls].slice(0, 3))); } }}/>
+                      <input type="file" ref={fileInputRefSidebar} className="hidden" multiple onChange={(e)=> { if(e.target.files) { 
+                        const files = Array.from(e.target.files) as File[]; 
+                        const promises = files.map(file => new Promise<string>(r => { const reader = new FileReader(); reader.onload = () => r(reader.result as string); 
+                        reader.readAsDataURL(file as Blob); })); Promise.all(promises).then(urls => setReferenceImages(prev => [...prev, ...urls].slice(0, 3))); } }}/>
                    </div>
                 </div>
                 <div className="space-y-2">
