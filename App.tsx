@@ -4,7 +4,8 @@ import ProStudioApp from './pro_studio/ProStudioApp';
 import BatchMasterApp from './batch_master/BatchMasterApp';
 import App3PosterApp from './app3/App';
 import App4EcomApp from './app4/App';
-import { LayoutGrid, Sparkles, ArrowRight, Move3d, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit } from 'lucide-react';
+import App5RefineApp from './app5/App'; 
+import { LayoutGrid, Sparkles, ArrowRight, Move3d, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2 } from 'lucide-react';
 import { saveUserKeys, clearUserKeys } from './apiConfig';
 
 const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatusChange: () => void }> = ({ isOpen, onClose, onStatusChange }) => {
@@ -112,7 +113,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
   );
 };
 
-const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom') => void }> = ({ onSelect }) => {
+const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine') => void }> = ({ onSelect }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hasCustomKeys, setHasCustomKeys] = useState(false);
 
@@ -126,7 +127,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
     checkKeys();
   }, []);
 
-  const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom') => {
+  const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine') => {
     if (!hasCustomKeys) {
         setIsSettingsOpen(true);
         return;
@@ -136,7 +137,6 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col relative overflow-x-hidden">
-      {/* 顶部固定导航栏样式按钮 */}
       <div className="fixed top-8 right-8 z-50 flex items-center gap-4">
         {!hasCustomKeys && (
             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-full animate-in slide-in-from-right-4 duration-500">
@@ -158,12 +158,10 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
 
       <KeyManagerModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onStatusChange={checkKeys} />
 
-      {/* 背景流光 */}
       <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] bg-blue-600/15 blur-[150px] rounded-full"></div>
       <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 blur-[150px] rounded-full"></div>
 
       <div className="max-w-7xl mx-auto w-full z-10 px-6 py-24 md:py-32 space-y-24 animate-in fade-in zoom-in-95 duration-1000 text-center">
-        {/* 头部标题区域 */}
         <div className="space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-[0.4em] mb-4">
             <Sparkles className="w-4 h-4" /> Professional Vision Ecosystem
@@ -190,9 +188,8 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
           </div>
         </div>
 
-        {/* 功能矩阵 */}
+        {/* 核心修改：grid-cols-1 md:grid-cols-2 实现一行两个布局 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
-          {/* 智拍大师 Pro */}
           <button onClick={() => handleCardClick('pro')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-blue-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-blue-600/10 transition-colors"></div>
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-blue-600/10 border-blue-600/20 group-hover:bg-blue-600 group-hover:text-white text-blue-400 transition-all duration-700 mb-8 shadow-xl">
@@ -207,7 +204,6 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
             </div>
           </button>
 
-          {/* 裂变大师 */}
           <button onClick={() => handleCardClick('batch')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-purple-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-purple-600/10 transition-colors"></div>
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-purple-600/10 border-purple-600/20 group-hover:bg-purple-600 group-hover:text-white text-purple-400 transition-all duration-700 mb-8 shadow-xl">
@@ -222,10 +218,10 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
             </div>
           </button>
 
-          {/* 海报智造家 */}
+          {/* 恢复并精准化：海报风格智造家 */}
           <button onClick={() => handleCardClick('poster')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-indigo-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-indigo-600/10 transition-colors"></div>
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-indigo-600/10 border-indigo-600/20 group-hover:bg-indigo-600 group-hover:text-white text-indigo-400 transition-all duration-700 mb-8 shadow-xl">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-indigo-100/10 border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white text-indigo-400 transition-all duration-700 mb-8 shadow-xl">
               <Palette className="w-10 h-10" />
             </div>
             <h2 className="text-4xl font-black text-white mb-6 tracking-tight">海报风格智造家</h2>
@@ -237,7 +233,20 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
             </div>
           </button>
 
-          {/* 策划专家 */}
+          <button onClick={() => handleCardClick('refine')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-blue-400/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-blue-400/10 transition-colors"></div>
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-blue-400/10 border-blue-400/20 group-hover:bg-blue-400 group-hover:text-white text-blue-300 transition-all duration-700 mb-8 shadow-xl">
+              <Wand2 className="w-10 h-10" />
+            </div>
+            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">方案精修与视觉智造</h2>
+            <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
+              视觉工程化落地利器。针对已有的简单构思，由 AI 专家深度细化排版布局、色彩方案与构图指令，并自动驱动旗舰引擎实现从灵感到 4K 高清成品的自动化生产闭环。
+            </p>
+            <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-blue-300 group-hover:gap-6 transition-all">
+              进入工坊 <ArrowRight className="w-4 h-4" />
+            </div>
+          </button>
+
           <button onClick={() => handleCardClick('ecom')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-emerald-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-emerald-600/10 transition-colors"></div>
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-emerald-600/10 border-emerald-600/20 group-hover:bg-emerald-600 group-hover:text-white text-emerald-400 transition-all duration-700 mb-8 shadow-xl">
@@ -245,7 +254,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
             </div>
             <h2 className="text-4xl font-black text-white mb-6 tracking-tight">全链路商业视觉智造引擎</h2>
             <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
-              集成深度逻辑推理模型，实现从产品策略解构到视觉内容产出的全流程自动化闭环。AI 专家将深度解构产品核心卖点与市场痛点，为您智造兼具品牌深度与高转化潜力的电商全链路策划方案、精准视觉提示词，并同步驱动渲染引擎生成高品质商业图像。
+              集成深度逻辑推理模型，实现从产品策略解构到视觉内容产出的全流程自动化闭环。AI 专家将深度解构产品核心卖点与市场痛点，智造高转化潜力的电商全案并同步渲染。
             </p>
             <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-emerald-400 group-hover:gap-6 transition-all">
               一键脑暴 <ArrowRight className="w-4 h-4" />
@@ -253,7 +262,6 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
           </button>
         </div>
 
-        {/* 底部信息 */}
         <div className="text-center pt-24 border-t border-white/5 pb-12">
             <p className="text-xs text-slate-600 uppercase tracking-[0.6em] font-black hover:text-slate-400 transition-colors">
                 DEVELOPER: STONE_LIWEI 丨 OFFICIAL: AIDEATOR.TOP 丨 SINCE 2025
@@ -265,7 +273,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom')
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom'>('launcher');
+  const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom' | 'refine'>('launcher');
 
   const BackButton = ({ colorClass }: { colorClass: string }) => (
     <button 
@@ -281,6 +289,7 @@ const App: React.FC = () => {
   if (view === 'batch') return (<div className="relative"><BatchMasterApp /><BackButton colorClass="bg-purple-600" /></div>);
   if (view === 'poster') return (<div className="relative"><App3PosterApp /><BackButton colorClass="bg-indigo-600" /></div>);
   if (view === 'ecom') return (<div className="relative"><App4EcomApp /><BackButton colorClass="bg-emerald-600" /></div>);
+  if (view === 'refine') return (<div className="relative"><App5RefineApp /><BackButton colorClass="bg-blue-400" /></div>);
 
   return <Launcher onSelect={setView} />;
 };
