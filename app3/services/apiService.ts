@@ -72,14 +72,14 @@ export interface DrawParams {
 }
 
 /**
- * 智能文案提取 (Grsai 分析接口)
+ * 智能文案提取 (升级为 gemini-3-pro)
  */
 export const extractTextFromImage = async (model: string, imageUrl: string) => {
   const response = await fetch(`${GRSAI_BASE}/v1/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_CONFIG.ANALYSIS_KEY}` },
     body: JSON.stringify({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-pro",
       messages: [
         { role: "system", content: "你是一个专业的海报设计文案提取器。请忽略系统栏，保留核心文案，每行一个。直接输出文案。" },
         { role: "user", content: [{ type: "text", text: "提取图中的文案：" }, { type: "image_url", image_url: { url: imageUrl } }] }
@@ -91,14 +91,14 @@ export const extractTextFromImage = async (model: string, imageUrl: string) => {
 };
 
 /**
- * 视觉元素识别 (Grsai 分析接口)
+ * 视觉元素识别 (升级为 gemini-3-pro)
  */
 export const identifyVisualElements = async (model: string, imageUrl: string) => {
   const response = await fetch(`${GRSAI_BASE}/v1/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_CONFIG.ANALYSIS_KEY}` },
     body: JSON.stringify({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-pro",
       messages: [
         { role: "system", content: "找出画面中可被替换的独立对象。输出纯 JSON 数组：[{\"id\": \"slot_1\", \"name\": \"名称\", \"suggestion\": \"建议\"}]" },
         { role: "user", content: [{ type: "image_url", image_url: { url: imageUrl } }] }
@@ -110,7 +110,7 @@ export const identifyVisualElements = async (model: string, imageUrl: string) =>
 };
 
 /**
- * 生成海报提示词 (Grsai 分析接口)
+ * 生成海报提示词 (升级为 gemini-3-pro)
  */
 export const analyzePoster = async (model: string, styleImage: string, replacedAssets: { id: string, data: string, name: string }[], copyText: string) => {
   const assetDescs = replacedAssets.map(a => a.name).join('、');
@@ -123,7 +123,7 @@ export const analyzePoster = async (model: string, styleImage: string, replacedA
   const response = await fetch(`${GRSAI_BASE}/v1/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_CONFIG.ANALYSIS_KEY}` },
-    body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: contentParts }] })
+    body: JSON.stringify({ model: "gemini-3-pro", messages: [{ role: "user", content: contentParts }] })
   });
   const data = await safeParseJson(response);
   return data.choices?.[0]?.message?.content?.trim() || "A professional poster replication prompt.";
