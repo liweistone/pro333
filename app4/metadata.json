@@ -1,0 +1,7 @@
+{
+  "name": "测试电商视觉一体化解决方案",
+  "description": "Advanced batch image generator for e-commerce, powered by Grsai Nano Banana Pro API, supporting 4K resolution and reference images.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
