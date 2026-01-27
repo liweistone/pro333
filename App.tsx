@@ -40,71 +40,81 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl shadow-blue-500/20">
-        <div className="p-8 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-xl">
-                <Settings className="w-5 h-5 text-blue-400" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300">
+      {/* 对话框容器：从 max-w-md 增大到 max-w-2xl */}
+      <div className="w-full max-w-2xl bg-[#0f172a] border border-white/20 rounded-[40px] overflow-hidden shadow-[0_0_120px_rgba(59,130,246,0.25)] ring-1 ring-white/10">
+        <div className="p-10 md:p-12 space-y-10">
+          {/* 标题栏：增大字号与图标 */}
+          <div className="flex items-center justify-between border-b border-white/5 pb-8">
+            <div className="flex items-center gap-5">
+              <div className="p-4 bg-blue-500/20 rounded-2xl shadow-inner ring-1 ring-blue-500/30">
+                <Settings className="w-8 h-8 text-blue-400" />
               </div>
-              <h2 className="text-xl font-bold text-white">API 配置管理</h2>
+              <h2 className="text-3xl font-black text-white tracking-tight">API 配置管理</h2>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-400 hover:text-white">
-              <X className="w-5 h-5" />
+            <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-full transition-all text-slate-400 hover:text-white group">
+              <X className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
             </button>
           </div>
 
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Key className="w-3 h-3" /> 绘图密钥
+          <div className="space-y-8">
+            {/* 绘图密钥：增大 Label 与 Input 字号 */}
+            <div className="space-y-4">
+              <label className="text-sm font-black text-blue-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
+                <Key className="w-5 h-5" /> 绘图密钥 (DRAW API KEY)
               </label>
               <input 
                 type="password" 
                 value={drawKey}
                 onChange={(e) => setDrawKey(e.target.value)}
-                placeholder={drawKey ? "已加密存储，输入新值可覆盖" : "sk-..."}
-                className="w-full bg-slate-800/50 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-slate-600"
+                placeholder={drawKey ? "●●●●●●●●●●●●●●●●●●●●" : "请输入绘图服务密钥 sk-..."}
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-6 py-5 text-lg text-white focus:outline-none focus:ring-4 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all placeholder:text-slate-600 shadow-inner"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <ShieldCheck className="w-3 h-3" /> 分析密钥
+            {/* 分析密钥：增大 Label 与 Input 字号 */}
+            <div className="space-y-4">
+              <label className="text-sm font-black text-indigo-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
+                <ShieldCheck className="w-5 h-5" /> 分析密钥 (ANALYSIS API KEY)
               </label>
               <input 
                 type="password" 
                 value={analysisKey}
                 onChange={(e) => setAnalysisKey(e.target.value)}
-                placeholder={analysisKey ? "已加密存储，输入新值可覆盖" : "sk-..."}
-                className="w-full bg-slate-800/50 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-600"
+                placeholder={analysisKey ? "●●●●●●●●●●●●●●●●●●●●" : "请输入分析服务密钥 sk-..."}
+                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-6 py-5 text-lg text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all placeholder:text-slate-600 shadow-inner"
               />
             </div>
           </div>
 
-          <div className="bg-blue-500/5 border border-blue-500/10 p-4 rounded-2xl text-center">
-            <p className="text-[10px] text-blue-300/80 leading-relaxed italic">
-              密钥直接保存在您的本地浏览器（LocalStorage）中。<br/>
-              系统直接调用第三方接口，确保数据传输链路最短。
-            </p>
+          {/* 安全提示：增大字号与对比度 */}
+          <div className="bg-blue-500/5 border border-blue-500/20 p-6 rounded-[24px] shadow-inner">
+            <div className="flex gap-4">
+                <div className="text-2xl">🔐</div>
+                <p className="text-sm md:text-base text-blue-100/90 leading-relaxed font-medium">
+                    <span className="text-blue-300 font-black">本地存储安全协议：</span><br/>
+                    密钥仅保存在您的浏览器（LocalStorage）中，绝不经过中转服务器，<br/>
+                    确保您的 API 资产完全私有化且数据传输链路最短。
+                </p>
+            </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          {/* 操作按钮：增大字号与高度 */}
+          <div className="flex gap-5 pt-4">
             <button 
               onClick={handleClear}
-              className="px-5 py-4 rounded-2xl text-[11px] font-black text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all border border-white/5"
+              className="px-8 py-5 rounded-2xl text-sm font-black text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all border border-white/10 active:scale-95"
             >
-              清空
+              清空重置
             </button>
             <button 
               onClick={handleSave}
               disabled={saved}
-              className={`flex-1 px-5 py-4 rounded-2xl text-[11px] font-black text-white transition-all shadow-xl flex items-center justify-center gap-2 ${
-                saved ? 'bg-emerald-600' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-500/20 active:scale-95'
+              className={`flex-1 px-8 py-5 rounded-2xl text-base font-black text-white transition-all shadow-2xl flex items-center justify-center gap-3 ${
+                saved ? 'bg-emerald-600 shadow-emerald-500/20' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/40 active:scale-95 ring-1 ring-white/10'
               }`}
             >
-              {saved ? <><CheckCircle2 className="w-4 h-4" /> 配置已更新</> : '保存配置'}
+              {saved ? <><CheckCircle2 className="w-6 h-6" /> 配置已生效</> : '立即保存配置'}
             </button>
           </div>
         </div>
@@ -188,7 +198,6 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
           </div>
         </div>
 
-        {/* 核心修改：grid-cols-1 md:grid-cols-2 实现一行两个布局 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
           <button onClick={() => handleCardClick('pro')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-blue-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-blue-600/10 transition-colors"></div>
@@ -218,7 +227,6 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             </div>
           </button>
 
-          {/* 恢复并精准化：海报风格智造家 */}
           <button onClick={() => handleCardClick('poster')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-indigo-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-indigo-600/10 transition-colors"></div>
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-indigo-100/10 border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white text-indigo-400 transition-all duration-700 mb-8 shadow-xl">
