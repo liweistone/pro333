@@ -11,19 +11,22 @@ export enum PresetCategory {
 }
 
 /**
- * 预设条目接口 - 严格对应 D1 数据库真实字段
+ * 预设条目接口 - 严格对应 D1 数据库真实字段 (根据截图)
  */
 export interface Preset {
   id: string;
-  title: string;          
-  description: string | null;    
-  positive: string;        // 数据库中的 positive 字段
-  image: string | null;    // 数据库中的 image 字段
-  preset_type: string;     // 数据库中的类型字段
+  title: string;
+  category_id: string;
+  description: string | null;
+  positive: string;        // 核心：正向提示词
+  negative: string | null; // 负向提示词
+  image: string | null;    // 核心：预览图路径
+  visibility: string;
+  preset_type: string;
   view_count: number;
   favorite_count: number;
   use_count: number;
-  created_at: number;      // 数据库中的时间戳
+  created_at: number;
 }
 
 /**
