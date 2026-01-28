@@ -8,7 +8,7 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
   const getBaseUrl = () => {
     if (typeof window !== 'undefined') {
       // 浏览器环境
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      if (window.location.hostname === 'localhost' || window.location.hostname === 'https://cloudflare-website.liwei791214.workers.dev') {
         // 开发环境，使用实际的 cloudflare-website URL
         // 注意：这里应使用实际部署的 cloudflare-website 域名
         return 'https://cloudflare-website.liwei791214.workers.dev'; // 替换为实际的 Workers 域名
@@ -150,4 +150,5 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
       }
     }
   };
+
 };
