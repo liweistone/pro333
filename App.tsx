@@ -6,7 +6,6 @@ import App3PosterApp from './app3/App';
 import App4EcomApp from './app4/App';
 import App5RefineApp from './app5/App'; 
 import App6LumiFluxApp from './app6/App'; // 导入新模块
-import App7PresetApp from './app7/App'; // 导入预设管理模块
 import { LayoutGrid, Sparkles, ArrowRight, Move3d, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2, Zap, Settings2 } from 'lucide-react';
 import { saveUserKeys, clearUserKeys } from './apiConfig';
 
@@ -133,7 +132,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
     checkKeys();
   }, []);
 
-  const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'preset') => {
+  const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi') => {
     if (!hasCustomKeys) {
         setIsSettingsOpen(true);
         return;
@@ -279,19 +278,19 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             </div>
           </button>
 
-          <button onClick={() => handleCardClick('preset')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-purple-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
+          <a href="https://aideator.top/" target="_blank" rel="noopener noreferrer" className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-purple-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-purple-600/10 transition-colors"></div>
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-purple-600/10 border-purple-600/20 group-hover:bg-purple-600 group-hover:text-white text-purple-400 transition-all duration-700 mb-8 shadow-xl">
               <Settings2 className="w-10 h-10" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">预设管理控制台</h2>
+            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">云端服务控制台</h2>
             <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
               云端预设管理系统。管理和配置 ComfyUI 工作流预设，支持分类管理、收藏功能和权限控制，提升 AI 工作流效率。
             </p>
             <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-purple-400 group-hover:gap-6 transition-all">
-              管理预设 <ArrowRight className="w-4 h-4" />
+              访问云端控制台 <ArrowRight className="w-4 h-4" />
             </div>
-          </button>
+          </a>
         </div>
 
         <div className="text-center pt-24 border-t border-white/5 pb-12">
@@ -305,7 +304,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'preset'>('launcher');
+  const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi'>('launcher');
 
   const BackButton = ({ colorClass }: { colorClass: string }) => (
     <button 
@@ -323,7 +322,7 @@ const App: React.FC = () => {
   if (view === 'ecom') return (<div className="relative"><App4EcomApp /><BackButton colorClass="bg-emerald-600" /></div>);
   if (view === 'refine') return (<div className="relative"><App5RefineApp /><BackButton colorClass="bg-blue-400" /></div>);
   if (view === 'lumi') return (<div className="relative"><App6LumiFluxApp /><BackButton colorClass="bg-cyan-600" /></div>);
-  if (view === 'preset') return (<div className="relative"><App7PresetApp /><BackButton colorClass="bg-purple-600" /></div>);
+
 
   return <Launcher onSelect={setView} />;
 };

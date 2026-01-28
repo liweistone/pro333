@@ -1,4 +1,3 @@
-
 {
   "name": "智拍裂变全能王---studio-pro",
   "private": true,
@@ -10,14 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "10.7.7",
+    "@react-three/fiber": "9.5.0",
+    "jszip": "3.10.1",
+    "lucide-react": "0.562.0",
+    "path": "0.12.7",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "three": "0.182.0",
-    "lucide-react": "0.562.0",
-    "@react-three/fiber": "9.5.0",
-    "@react-three/drei": "10.7.7",
-    "jszip": "3.10.1",
-    "path": "0.12.7",
     "url": "0.11.4"
   },
   "devDependencies": {
@@ -25,6 +24,9 @@
     "@types/react": "19.2.9",
     "@types/three": "0.182.0",
     "@vitejs/plugin-react": "5.1.2",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "typescript": "5.8.3",
     "vite": "7.3.1"
   }
