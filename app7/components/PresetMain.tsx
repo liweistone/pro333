@@ -1,135 +1,157 @@
-// app7/components/PresetMain.tsx
-import React, { useState } from 'react';
-import { usePresets } from '../hooks/usePresets';
-import PresetList from './Presets/PresetList';
+import React, { useState, useEffect } from 'react';
+import { initializePresetService, getPresetService } from '../services/presetService';
 
-const PresetMain: React.FC = () => {
-  const {
-    categories,
-    presets,
-    loading,
-    error,
-    pagination,
-    loadPresetsByCategory,
-    changePage,
-    favoritePreset,
-    unfavoritePreset
-  } = usePresets();
+interface CloudflareEnv {
+  CLOUDFLARE_WEBSITE: Fetcher;
+}
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [authToken, setAuthToken] = useState<string>('');
+interface PresetMainProps {
+  env?: CloudflareEnv;
+}
 
-  const handleCategoryChange = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    loadPresetsByCategory(categoryId);
-  };
+const PresetMain: React.FC<PresetMainProps> = ({ env }) => {
+  const [categories, setCategories] = useState<{ [key: string]: string }>({});
+  const [presets, setPresets] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'categories' | 'presets'>('categories');
 
-  const handlePresetClick = (preset: any) => {
-    console.log('点击预设:', preset);
-  };
+  useEffect(() => {
+    // 初始化预设服务
+    initializePresetService(env);
+    loadInitialData();
+  }, [env]);
 
-  const handleFavoriteToggle = async (preset: any, token: string) => {
-    if (!token) {
-      alert('请先登录');
-      return;
-    }
-
+  const loadInitialData = async () => {
     try {
-      if (preset.is_favorited) {
-        await unfavoritePreset(preset.id, token);
-      } else {
-        await favoritePreset(preset.id, token);
-      }
+      setLoading(true);
+      setError(null);
+      
+      // 加载分类
+      const presetService = getPresetService();
+      const categoriesData = await presetService.getCategories();
+      setCategories(categoriesData);
+      
+      // 加载预设列表
+      const presetsData = await presetService.getPresetList();
+      setPresets(presetsData.presets || presetsData.data || []);
     } catch (err) {
-      console.error('操作失败:', err);
-      alert('操作失败，请稍后重试');
+      console.error('加载数据失败:', err);
+      setError(err instanceof Error ? err.message : '加载数据失败');
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="preset-main-container max-w-7xl mx-auto">
-      <div className="header-section mb-12 text-center">
-        <h1 className="text-5xl font-black bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent mb-4">
-          预设管理控制台
-        </h1>
-        <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-          云端预设管理系统，支持分类管理、收藏功能和权限控制，提升 AI 工作流效率
-        </p>
-      </div>
-
-      <div className="controls-section mb-8 p-6 bg-gray-800/50 rounded-2xl border border-gray-700">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
-            <label className="block text-sm font-medium text-gray-300 mb-2">分类筛选</label>
-            <select 
-              value={selectedCategory} 
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="">全部分类</option>
-              {Object.entries(categories).map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="lg:col-span-1">
-            <label className="block text-sm font-medium text-gray-300 mb-2">排序方式</label>
-            <select className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-              <option value="newest">最新</option>
-              <option value="popular">最流行</option>
-              <option value="most_viewed">最多查看</option>
-              <option value="most_favorited">最多收藏</option>
-            </select>
-          </div>
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">认证令牌</label>
-            <input
-              type="text"
-              placeholder="输入认证令牌"
-              value={authToken}
-              onChange={(e) => setAuthToken(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-lg text-gray-600">加载中...</p>
         </div>
       </div>
+    );
+  }
 
-      {error && (
-        <div className="error-section mb-8 p-4 bg-red-900/30 border border-red-700 rounded-xl text-red-300">
-          错误: {error}
+  if (error) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <strong className="font-bold">错误: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+        <button 
+          onClick={loadInitialData}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          重试
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">预设管理系统</h1>
+      
+      {/* Tab 切换 */}
+      <div className="flex border-b mb-6">
+        <button
+          className={`py-2 px-4 font-medium text-sm ${activeTab === 'categories' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveTab('categories')}
+        >
+          预设分类
+        </button>
+        <button
+          className={`py-2 px-4 font-medium text-sm ${activeTab === 'presets' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveTab('presets')}
+        >
+          预设列表
+        </button>
+      </div>
+
+      {/* 分类展示 */}
+      {activeTab === 'categories' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(categories).map(([id, name]) => (
+            <div 
+              key={id} 
+              className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500 hover:shadow-md transition-shadow"
+            >
+              <h3 className="font-semibold text-gray-800">{name}</h3>
+              <p className="text-sm text-gray-500 mt-1">ID: {id}</p>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="preset-list-section">
-        <PresetList
-          presets={presets}
-          loading={loading}
-          error={error}
-          onPresetClick={handlePresetClick}
-          onFavoriteToggle={handleFavoriteToggle}
-          token={authToken}
-        />
-      </div>
+      {/* 预设列表展示 */}
+      {activeTab === 'presets' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {presets.map((preset) => (
+            <div 
+              key={preset.id} 
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+            >
+              {preset.image && (
+                <img 
+                  src={preset.image.startsWith('http') ? preset.image : `https://cloudflare-website.liwei791214.workers.dev${preset.image}`} 
+                  alt={preset.title} 
+                  className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.src = 'https://placehold.co/400x300?text=No+Image';
+                  }}
+                />
+              )}
+              <div className="p-4">
+                <h3 className="font-semibold text-lg text-gray-800 truncate">{preset.title}</h3>
+                <p className="text-gray-600 text-sm mt-1 line-clamp-2">{preset.description}</p>
+                <div className="mt-3 flex justify-between items-center">
+                  <span className="text-xs text-gray-500">
+                    {categories[preset.category_id] || preset.category_id || '未知分类'}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    使用: {preset.use_count || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {pagination.totalPages > 1 && (
-        <div className="pagination-section mt-12 flex justify-center items-center gap-4">
-          <button
-            disabled={pagination.currentPage <= 1}
-            onClick={() => changePage(pagination.currentPage - 1)}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            上一页
-          </button>
-          <span className="text-gray-300">
-            第 {pagination.currentPage} 页，共 {pagination.totalPages} 页
-          </span>
-          <button
-            disabled={pagination.currentPage >= pagination.totalPages}
-            onClick={() => changePage(pagination.currentPage + 1)}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            下一页
-          </button>
+      {Object.keys(categories).length === 0 && activeTab === 'categories' && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">暂无分类数据</p>
+        </div>
+      )}
+
+      {presets.length === 0 && activeTab === 'presets' && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">暂无预设数据</p>
         </div>
       )}
     </div>
