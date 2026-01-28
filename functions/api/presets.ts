@@ -1,5 +1,4 @@
 
-// Fix: Added missing Cloudflare Pages and D1 type definitions to resolve compilation errors
 interface D1Database {
   prepare(sql: string): {
     bind(...params: any[]): {
@@ -22,36 +21,38 @@ export const onRequest: PagesFunction<{ "my-database": D1Database }> = async (co
   const { env, request } = context;
   const db = env["my-database"];
   
-  // 1. 解析请求参数
   const url = new URL(request.url);
   const category = url.searchParams.get('category') || '全部';
   const query = url.searchParams.get('q') || '';
 
   try {
-    // 2. 构建 SQL 查询语句
-    // 假设您的 D1 中有一张名为 presets 的表
+    // 适配真实表名：presets
     let sql = "SELECT * FROM presets WHERE 1=1";
     const params: any[] = [];
 
+    // 如果数据库中 preset_type 对应分类，则进行过滤
     if (category !== '全部') {
-      sql += " AND category = ?";
-      params.push(category);
+      sql += " AND preset_type = ?";
+      params.push(category.toLowerCase());
     }
 
     if (query) {
-      sql += " AND (title LIKE ? OR prompt LIKE ? OR tags LIKE ?)";
+      // 适配真实字段：positive
+      sql += " AND (title LIKE ? OR positive LIKE ?)";
       const likeQuery = `%${query}%`;
-      params.push(likeQuery, likeQuery, likeQuery);
+      params.push(likeQuery, likeQuery);
     }
 
-    sql += " ORDER BY createdAt DESC";
+    // 适配真实字段：created_at
+    sql += " ORDER BY created_at DESC";
 
-    // 3. 执行 D1 查询
     const { results } = await db.prepare(sql).bind(...params).all();
 
-    // 4. 返回结果
     return new Response(JSON.stringify(results), {
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*" 
+      },
     });
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), { 

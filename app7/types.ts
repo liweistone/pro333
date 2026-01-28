@@ -11,22 +11,19 @@ export enum PresetCategory {
 }
 
 /**
- * 预设条目接口
+ * 预设条目接口 - 严格对应 D1 数据库真实字段
  */
 export interface Preset {
   id: string;
-  title: string;          // 预设名称
-  description: string;    // 预设描述
-  category: PresetCategory;
-  thumbnailUrl: string;   // 预览图地址（对接 R2）
-  prompt: string;         // 核心提示词（存储在 D1）
-  params: {               // 生成参数
-    aspectRatio: string;
-    resolution: string;
-  };
-  tags: string[];         // 标签
-  source: string;         // 来源（如：大海捞针项目）
-  createdAt: string;      // 创建时间
+  title: string;          
+  description: string | null;    
+  positive: string;        // 数据库中的 positive 字段
+  image: string | null;    // 数据库中的 image 字段
+  preset_type: string;     // 数据库中的类型字段
+  view_count: number;
+  favorite_count: number;
+  use_count: number;
+  created_at: number;      // 数据库中的时间戳
 }
 
 /**
