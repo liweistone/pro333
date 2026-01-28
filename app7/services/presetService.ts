@@ -1,249 +1,61 @@
-// app7/services/presetService.ts
-import { createPresetApiClient } from '../utils/apiClient';
-import { 
-  PresetCategory, 
-  PresetItem, 
-  PresetDetail, 
-  PresetListResponse, 
-  PresetSearchParams 
-} from '../types/presetTypes';
 
-class PresetService {
-  private apiClient;
+import { Preset, PresetCategory } from '../types';
 
-  constructor(env?: any) {
-    this.apiClient = createPresetApiClient(env);
-  }
-
+/**
+ * 预设中心服务类：对接真实的 Cloudflare 后端接口
+ */
+export class PresetService {
   /**
-   * 获取预设分类列表
+   * 从 D1 数据库获取预设（通过后端 Function 桥接）
    */
-  async getCategories(): Promise<Record<string, string>> {
+  async fetchPresets(category: PresetCategory = PresetCategory.ALL, search?: string): Promise<Preset[]> {
     try {
-      const response = await this.apiClient.presets.getCategories();
+      // 构造请求 URL，指向我们刚创建的后端 Function
+      const url = new URL('/api/presets', window.location.origin);
+      url.searchParams.append('category', category);
+      if (search) url.searchParams.append('q', search);
+
+      const response = await fetch(url.toString());
       
       if (!response.ok) {
-        throw new Error(`获取分类失败: ${response.status} ${response.statusText}`);
+        const errData = await response.json();
+        throw new Error(errData.error || "无法获取数据库数据");
       }
-      
-      // 检查响应是否为 JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Received non-JSON response:', text.substring(0, 200) + '...');
-        throw new Error('服务器返回了无效的响应格式');
-      }
-      
+
       const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('获取预设分类失败:', error);
-      throw error;
+      
+      // 如果数据库返回的是空或者格式不对，进行容错处理
+      if (!Array.isArray(data)) return [];
+
+      // 映射数据库字段到前端模型（确保字段名匹配）
+      return data.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        category: item.category as PresetCategory,
+        thumbnailUrl: item.thumbnailUrl || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=400",
+        prompt: item.prompt,
+        params: typeof item.params === 'string' ? JSON.parse(item.params) : (item.params || { aspectRatio: "1:1", resolution: "1K" }),
+        tags: typeof item.tags === 'string' ? item.tags.split(',') : (item.tags || []),
+        source: item.source || "D1 Database",
+        createdAt: item.createdAt || new Date().toISOString().split('T')[0]
+      }));
+    } catch (e) {
+      console.error("D1 数据读取失败:", e);
+      throw e;
     }
   }
 
   /**
-   * 获取预设列表
+   * 将选定的预设保存到私有库
    */
-  async getPresetList(params?: PresetSearchParams): Promise<PresetListResponse> {
-    try {
-      const response = await this.apiClient.presets.getList({
-        category_id: params?.category_id,
-        sort: params?.sort,
-        page: params?.page,
-        limit: params?.limit
-      });
-      
-      if (!response.ok) {
-        throw new Error(`获取预设列表失败: ${response.status} ${response.statusText}`);
-      }
-      
-      // 检查响应是否为 JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Received non-JSON response:', text.substring(0, 200) + '...');
-        throw new Error('服务器返回了无效的响应格式');
-      }
-      
-      const data = await response.json();
-      return {
-        categories: data.categories || {},
-        presets: data.presets || [],
-        data: data.data || [],
-        pagination: data.pagination || {
-          currentPage: 1,
-          totalPages: 1,
-          total: 0,
-          limit: 20
-        },
-        current_category: data.current_category || ""
-      };
-    } catch (error) {
-      console.error('获取预设列表失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 获取预设详情
-   */
-  async getPresetDetail(id: string): Promise<PresetDetail> {
-    try {
-      const response = await this.apiClient.presets.getDetail(id);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('预设不存在');
-        } else if (response.status === 401) {
-          throw new Error('需要登录访问');
-        } else if (response.status === 403) {
-          throw new Error('没有权限访问此预设');
-        }
-        throw new Error(`获取预设详情失败: ${response.status} ${response.statusText}`);
-      }
-      
-      // 检查响应是否为 JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Received non-JSON response:', text.substring(0, 200) + '...');
-        throw new Error('服务器返回了无效的响应格式');
-      }
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error(`获取预设详情失败 (ID: ${id}):`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 搜索预设
-   */
-  async searchPresets(searchTerm: string, params?: Omit<PresetSearchParams, 'search'>): Promise<PresetListResponse> {
-    // 这里使用前端过滤，因为现有API没有提供搜索参数
-    const allPresets = await this.getPresetList(params);
-    
-    if (!searchTerm) {
-      return allPresets;
-    }
-    
-    const filteredPresets = {
-      ...allPresets,
-      presets: allPresets.presets.filter(preset => 
-        preset.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (preset.description && preset.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    };
-    
-    return filteredPresets;
-  }
-
-  /**
-   * 根据分类获取预设
-   */
-  async getPresetsByCategory(categoryId: string, page?: number, limit?: number): Promise<PresetListResponse> {
-    return this.getPresetList({
-      category_id: categoryId,
-      page,
-      limit
+  async saveToPrivate(preset: Preset): Promise<boolean> {
+    // 可以在这里通过 POST 请求向 D1 写入数据
+    const res = await fetch('/api/presets/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preset)
     });
-  }
-
-  /**
-   * 收藏预设
-   */
-  async favoritePreset(id: string, token: string): Promise<void> {
-    try {
-      const response = await this.apiClient.presets.favorite(id, token);
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('需要登录才能收藏');
-        }
-        throw new Error(`收藏预设失败: ${response.status} ${response.statusText}`);
-      }
-      
-      // 检查响应是否为 JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.info('收藏成功，服务器返回:', text.substring(0, 100) + '...');
-      } else {
-        const data = await response.json();
-        console.log('收藏成功:', data.message);
-      }
-    } catch (error) {
-      console.error('收藏预设失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 取消收藏预设
-   */
-  async unfavoritePreset(id: string, token: string): Promise<void> {
-    try {
-      const response = await this.apiClient.presets.unfavorite(id, token);
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('需要登录才能取消收藏');
-        }
-        throw new Error(`取消收藏失败: ${response.status} ${response.statusText}`);
-      }
-      
-      // 检查响应是否为 JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.info('取消收藏成功，服务器返回:', text.substring(0, 100) + '...');
-      } else {
-        const data = await response.json();
-        console.log('取消收藏成功:', data.message);
-      }
-    } catch (error) {
-      console.error('取消收藏预设失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 记录预设使用
-   */
-  async recordPresetUse(id: string): Promise<void> {
-    try {
-      const response = await this.apiClient.presets.recordUse(id);
-      
-      if (!response.ok) {
-        console.warn(`记录预设使用失败: ${response.status} ${response.statusText}`);
-        // 不抛出错误，因为这不应该阻止用户继续操作
-        return;
-      }
-      
-      console.log('预设使用记录已更新');
-    } catch (error) {
-      console.warn('记录预设使用失败:', error);
-      // 不抛出错误，因为这不应该阻止用户继续操作
-    }
+    return res.ok;
   }
 }
-
-// 创建全局实例
-let presetService: PresetService | null = null;
-
-export const initializePresetService = (env?: any): PresetService => {
-  presetService = new PresetService(env);
-  return presetService;
-};
-
-export const getPresetService = (): PresetService => {
-  if (!presetService) {
-    throw new Error('PresetService 未初始化，请先调用 initializePresetService');
-  }
-  return presetService;
-};
-
-export default PresetService;
