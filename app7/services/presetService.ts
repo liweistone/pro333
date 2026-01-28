@@ -26,6 +26,14 @@ class PresetService {
         throw new Error(`获取分类失败: ${response.status} ${response.statusText}`);
       }
       
+      // 检查响应是否为 JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Received non-JSON response:', text.substring(0, 200) + '...');
+        throw new Error('服务器返回了无效的响应格式');
+      }
+      
       const data = await response.json();
       return data;
     } catch (error) {
@@ -48,6 +56,14 @@ class PresetService {
       
       if (!response.ok) {
         throw new Error(`获取预设列表失败: ${response.status} ${response.statusText}`);
+      }
+      
+      // 检查响应是否为 JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Received non-JSON response:', text.substring(0, 200) + '...');
+        throw new Error('服务器返回了无效的响应格式');
       }
       
       const data = await response.json();
@@ -85,6 +101,14 @@ class PresetService {
           throw new Error('没有权限访问此预设');
         }
         throw new Error(`获取预设详情失败: ${response.status} ${response.statusText}`);
+      }
+      
+      // 检查响应是否为 JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Received non-JSON response:', text.substring(0, 200) + '...');
+        throw new Error('服务器返回了无效的响应格式');
       }
       
       const data = await response.json();
@@ -142,8 +166,15 @@ class PresetService {
         throw new Error(`收藏预设失败: ${response.status} ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log('收藏成功:', data.message);
+      // 检查响应是否为 JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.info('收藏成功，服务器返回:', text.substring(0, 100) + '...');
+      } else {
+        const data = await response.json();
+        console.log('收藏成功:', data.message);
+      }
     } catch (error) {
       console.error('收藏预设失败:', error);
       throw error;
@@ -164,8 +195,15 @@ class PresetService {
         throw new Error(`取消收藏失败: ${response.status} ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log('取消收藏成功:', data.message);
+      // 检查响应是否为 JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.info('取消收藏成功，服务器返回:', text.substring(0, 100) + '...');
+      } else {
+        const data = await response.json();
+        console.log('取消收藏成功:', data.message);
+      }
     } catch (error) {
       console.error('取消收藏预设失败:', error);
       throw error;

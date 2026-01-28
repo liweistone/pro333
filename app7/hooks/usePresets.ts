@@ -32,7 +32,11 @@ export const usePresets = (options: UsePresetsOptions = {}) => {
 
   // 初始化服务
   useEffect(() => {
-    initializePresetService();
+    try {
+      initializePresetService();
+    } catch (err) {
+      console.error('初始化预设服务失败:', err);
+    }
   }, []);
 
   // 加载分类
@@ -44,7 +48,8 @@ export const usePresets = (options: UsePresetsOptions = {}) => {
       const categoriesData = await service.getCategories();
       setCategories(categoriesData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加载分类失败');
+      const errorMessage = err instanceof Error ? err.message : '加载分类失败';
+      setError(errorMessage);
       console.error('加载预设分类失败:', err);
     } finally {
       setLoading(false);
@@ -71,7 +76,8 @@ export const usePresets = (options: UsePresetsOptions = {}) => {
         limit: response.pagination.limit
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加载预设失败');
+      const errorMessage = err instanceof Error ? err.message : '加载预设失败';
+      setError(errorMessage);
       console.error('加载预设列表失败:', err);
     } finally {
       setLoading(false);
@@ -94,7 +100,8 @@ export const usePresets = (options: UsePresetsOptions = {}) => {
         limit: response.pagination.limit
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '搜索预设失败');
+      const errorMessage = err instanceof Error ? err.message : '搜索预设失败';
+      setError(errorMessage);
       console.error('搜索预设失败:', err);
     } finally {
       setLoading(false);
@@ -110,7 +117,8 @@ export const usePresets = (options: UsePresetsOptions = {}) => {
       const detail = await service.getPresetDetail(id);
       setCurrentPreset(detail);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加载预设详情失败');
+      const errorMessage = err instanceof Error ? err.message : '加载预设详情失败';
+      setError(errorMessage);
       console.error('加载预设详情失败:', err);
     } finally {
       setLoading(false);
@@ -149,7 +157,8 @@ export const usePresets = (options: UsePresetsOptions = {}) => {
         setCurrentPreset({ ...currentPreset, favorite_count: currentPreset.favorite_count + 1, is_favorited: true });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '收藏失败');
+      const errorMessage = err instanceof Error ? err.message : '收藏失败';
+      setError(errorMessage);
       console.error('收藏预设失败:', err);
     }
   }, [currentPreset]);
@@ -169,7 +178,8 @@ export const usePresets = (options: UsePresetsOptions = {}) => {
         setCurrentPreset({ ...currentPreset, favorite_count: Math.max(0, currentPreset.favorite_count - 1), is_favorited: false });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '取消收藏失败');
+      const errorMessage = err instanceof Error ? err.message : '取消收藏失败';
+      setError(errorMessage);
       console.error('取消收藏预设失败:', err);
     }
   }, [currentPreset]);
