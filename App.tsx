@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import ProStudioApp from './pro_studio/ProStudioApp';
 import BatchMasterApp from './batch_master/BatchMasterApp';
 import App3PosterApp from './app3/App';
 import App4EcomApp from './app4/App';
 import App5RefineApp from './app5/App'; 
-import { LayoutGrid, Sparkles, ArrowRight, Move3d, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2 } from 'lucide-react';
+import App6LumiFluxApp from './app6/App';
+import { LayoutGrid, Sparkles, ArrowRight, Move3d, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2, Zap } from 'lucide-react';
 import { saveUserKeys, clearUserKeys } from './apiConfig';
 
 const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatusChange: () => void }> = ({ isOpen, onClose, onStatusChange }) => {
@@ -41,10 +41,8 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300">
-      {/* 对话框容器：从 max-w-md 增大到 max-w-2xl */}
       <div className="w-full max-w-2xl bg-[#0f172a] border border-white/20 rounded-[40px] overflow-hidden shadow-[0_0_120px_rgba(59,130,246,0.25)] ring-1 ring-white/10">
         <div className="p-10 md:p-12 space-y-10">
-          {/* 标题栏：增大字号与图标 */}
           <div className="flex items-center justify-between border-b border-white/5 pb-8">
             <div className="flex items-center gap-5">
               <div className="p-4 bg-blue-500/20 rounded-2xl shadow-inner ring-1 ring-blue-500/30">
@@ -58,7 +56,6 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
           </div>
 
           <div className="space-y-8">
-            {/* 绘图密钥：增大 Label 与 Input 字号 */}
             <div className="space-y-4">
               <label className="text-sm font-black text-blue-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
                 <Key className="w-5 h-5" /> 绘图密钥 (DRAW API KEY)
@@ -72,7 +69,6 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
               />
             </div>
 
-            {/* 分析密钥：增大 Label 与 Input 字号 */}
             <div className="space-y-4">
               <label className="text-sm font-black text-indigo-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
                 <ShieldCheck className="w-5 h-5" /> 分析密钥 (ANALYSIS API KEY)
@@ -87,7 +83,6 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
             </div>
           </div>
 
-          {/* 安全提示：增大字号与对比度 */}
           <div className="bg-blue-500/5 border border-blue-500/20 p-6 rounded-[24px] shadow-inner">
             <div className="flex gap-4">
                 <div className="text-2xl">🔐</div>
@@ -99,7 +94,6 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
             </div>
           </div>
 
-          {/* 操作按钮：增大字号与高度 */}
           <div className="flex gap-5 pt-4">
             <button 
               onClick={handleClear}
@@ -123,7 +117,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
   );
 };
 
-const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine') => void }> = ({ onSelect }) => {
+const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi') => void }> = ({ onSelect }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hasCustomKeys, setHasCustomKeys] = useState(false);
 
@@ -137,7 +131,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
     checkKeys();
   }, []);
 
-  const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine') => {
+  const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi') => {
     if (!hasCustomKeys) {
         setIsSettingsOpen(true);
         return;
@@ -198,15 +192,15 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
           <button onClick={() => handleCardClick('pro')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-blue-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-blue-600/10 transition-colors"></div>
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-blue-600/10 border-blue-600/20 group-hover:bg-blue-600 group-hover:text-white text-blue-400 transition-all duration-700 mb-8 shadow-xl">
               <Move3d className="w-10 h-10" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">智拍大师 Pro</h2>
-            <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
-              定义 3D 视觉新标准。通过高精度姿态、骨骼与人体轮廓控制，结合内置的专业摄影棚布光引擎，重塑商业人像生命力，实现极致的构图自由。
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">智拍大师 Pro</h2>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
+              定义 3D 视觉新标准。通过高精度姿态控制与影棚布光引擎，重塑商业人像生命力。
             </p>
             <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-blue-400 group-hover:gap-6 transition-all">
               进入工作台 <ArrowRight className="w-4 h-4" />
@@ -218,9 +212,9 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-purple-600/10 border-purple-600/20 group-hover:bg-purple-600 group-hover:text-white text-purple-400 transition-all duration-700 mb-8 shadow-xl">
               <LayoutGrid className="w-10 h-10" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">裂变大师</h2>
-            <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
-              电商工业化生产引擎。利用核心视觉指纹锚定技术，一键裂变数十个专业摄影机位的主图素材，为您的产品线带来指数级的生产效率飞跃。
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">裂变大师</h2>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
+              电商工业化生产引擎。核心指纹锚定技术，一键裂变数十组专业摄影机位素材。
             </p>
             <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-purple-400 group-hover:gap-6 transition-all">
               进入实验室 <ArrowRight className="w-4 h-4" />
@@ -232,9 +226,9 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-indigo-100/10 border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white text-indigo-400 transition-all duration-700 mb-8 shadow-xl">
               <Palette className="w-10 h-10" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">海报风格智造家</h2>
-            <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
-              深度识别海报视觉 DNA。采用跨模态资产融合技术，完美复刻顶尖海报的布局与审美风格，让每一份商业创意都能以大师级水准无损落地。
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">海报风格智造家</h2>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
+              深度识别视觉 DNA。资产融合技术，无损复刻顶尖海报布局与高级审美风格。
             </p>
             <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-indigo-400 group-hover:gap-6 transition-all">
               开始重构 <ArrowRight className="w-4 h-4" />
@@ -246,9 +240,9 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-blue-400/10 border-blue-400/20 group-hover:bg-blue-400 group-hover:text-white text-blue-300 transition-all duration-700 mb-8 shadow-xl">
               <Wand2 className="w-10 h-10" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">方案精修与视觉智造</h2>
-            <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
-              视觉工程化落地利器。针对已有的简单构思，由 AI 专家深度细化排版布局、色彩方案与构图指令，并自动驱动旗舰引擎实现从灵感到 4K 高清成品的自动化生产闭环。
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">方案精修智造</h2>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
+              灵感工程化闭环。针对简单构思进行专家级细节增补，自动驱动 4K 高清渲染。
             </p>
             <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-blue-300 group-hover:gap-6 transition-all">
               进入工坊 <ArrowRight className="w-4 h-4" />
@@ -260,12 +254,26 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-emerald-600/10 border-emerald-600/20 group-hover:bg-emerald-600 group-hover:text-white text-emerald-400 transition-all duration-700 mb-8 shadow-xl">
               <BrainCircuit className="w-10 h-10" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-tight">全链路商业视觉智造引擎</h2>
-            <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-12 font-medium w-full">
-              集成深度逻辑推理模型，实现从产品策略解构到视觉内容产出的全流程自动化闭环。AI 专家将深度解构产品核心卖点与市场痛点，智造高转化潜力的电商全案并同步渲染。
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">全链路商业智造</h2>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
+              逻辑推理驱动。深度解构产品核心卖点，自动化输出高转化电商全案与素材。
             </p>
             <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-emerald-400 group-hover:gap-6 transition-all">
               一键脑暴 <ArrowRight className="w-4 h-4" />
+            </div>
+          </button>
+
+          <button onClick={() => handleCardClick('lumi')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-cyan-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-cyan-600/10 transition-colors"></div>
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-cyan-500/10 border-cyan-500/20 group-hover:bg-cyan-600 group-hover:text-white text-cyan-400 transition-all duration-700 mb-8 shadow-xl">
+              <Zap className="w-10 h-10" />
+            </div>
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">流光智造 Pro</h2>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
+              工业级产品流光特效。DNA 拓扑分析构思剧本，渲染高保真动态流光渲染视频。
+            </p>
+            <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-cyan-400 group-hover:gap-6 transition-all">
+              启动智造 <ArrowRight className="w-4 h-4" />
             </div>
           </button>
         </div>
@@ -281,7 +289,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom' | 'refine'>('launcher');
+  const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi'>('launcher');
 
   const BackButton = ({ colorClass }: { colorClass: string }) => (
     <button 
@@ -298,6 +306,7 @@ const App: React.FC = () => {
   if (view === 'poster') return (<div className="relative"><App3PosterApp /><BackButton colorClass="bg-indigo-600" /></div>);
   if (view === 'ecom') return (<div className="relative"><App4EcomApp /><BackButton colorClass="bg-emerald-600" /></div>);
   if (view === 'refine') return (<div className="relative"><App5RefineApp /><BackButton colorClass="bg-blue-400" /></div>);
+  if (view === 'lumi') return (<div className="relative"><App6LumiFluxApp /><BackButton colorClass="bg-cyan-600" /></div>);
 
   return <Launcher onSelect={setView} />;
 };
