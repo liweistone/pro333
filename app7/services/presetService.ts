@@ -3,59 +3,55 @@ import { Preset, PresetCategory } from '../types';
 
 /**
  * 预设中心服务类
- * 逻辑：优先尝试 Pages Functions 代理，失败后尝试生产环境直连
  */
 export class PresetService {
-  private baseURL = 'https://aideator.top';
+  private productionURL = 'https://aideator.top';
 
   async fetchPresets(category: PresetCategory = PresetCategory.ALL, search?: string): Promise<Preset[]> {
-    const isProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
-    
-    // 构建请求路径
-    // 如果是在 localhost 运行，且没有使用 wrangler dev，本地 /api/presets 会返回 404
-    const proxyUrl = new URL('/api/presets', window.location.origin);
-    proxyUrl.searchParams.append('category', category);
-    if (search) proxyUrl.searchParams.append('q', search);
+    // 1. 构造本地 Pages Function 请求
+    const apiPath = '/api/presets';
+    const url = new URL(apiPath, window.location.origin);
+    url.searchParams.append('category', category);
+    if (search) url.searchParams.append('q', search);
 
     try {
-      const response = await fetch(proxyUrl.toString());
+      const response = await fetch(url.toString(), {
+        headers: { 'Accept': 'application/json' }
+      });
       
       if (response.ok) {
-        const results = await response.json();
-        // 兼容处理：D1 返回的结果可能是直接数组，也可能是 { success: true, data: [...] }
-        if (Array.isArray(results)) return results as Preset[];
-        if (results.data && Array.isArray(results.data)) return results.data as Preset[];
-        if (results.results && Array.isArray(results.results)) return results.results as Preset[];
+        const data = await response.json();
+        // D1 .all() 通常直接返回数组结果
+        if (Array.isArray(data)) return data;
+        if (data.results && Array.isArray(data.results)) return data.results;
+        if (data.data && Array.isArray(data.data)) return data.data;
       }
       
-      // 如果本地代理返回非 OK (如 404)，触发 Fallback
-      throw new Error("Local proxy not available");
+      throw new Error(`API Status: ${response.status}`);
 
     } catch (e) {
-      console.warn("D1 本地环境不可用或未部署，正在尝试从生产节点同步数据...");
+      console.warn("本地 D1 代理不可用，尝试同步生产节点数据...");
       
       try {
-        // 构建生产环境直连 URL
-        const fallbackUrl = `${this.baseURL}/api/presets?limit=50&category=${encodeURIComponent(category)}${search ? `&q=${encodeURIComponent(search)}` : ''}`;
-        
-        const fallbackRes = await fetch(fallbackUrl, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors' // 必须显式声明跨域
+        // 2. 回退到生产环境 API 直连
+        const fallbackUrl = new URL('/api/presets', this.productionURL);
+        fallbackUrl.searchParams.append('category', category);
+        if (search) fallbackUrl.searchParams.append('q', search);
+        fallbackUrl.searchParams.append('limit', '40');
+
+        const fallbackRes = await fetch(fallbackUrl.toString(), {
+          mode: 'cors'
         });
 
-        if (!fallbackRes.ok) throw new Error(`Fallback failed: ${fallbackRes.status}`);
-
-        const fallbackData = await fallbackRes.json();
-        // 生产环境接口通常返回的是封装结构
-        const list = fallbackData.data || fallbackData.results || fallbackData;
-        return Array.isArray(list) ? list : [];
-
-      } catch (innerErr) {
-        console.error("所有数据获取渠道均已失效:", innerErr);
-        // 如果是本地开发且无法跨域，在这里可以返回一组 Mock 数据用于 UI 调试
-        return []; 
+        if (fallbackRes.ok) {
+          const fbData = await fallbackRes.json();
+          const list = fbData.data || fbData.results || fbData;
+          return Array.isArray(list) ? list : [];
+        }
+      } catch (inner) {
+        console.error("数据链路完全中断");
       }
+      return [];
     }
   }
 
