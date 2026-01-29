@@ -1,5 +1,5 @@
 {
-  "name": "海报风格智造家",
+  "name": "Copy of 海报风格智造家优化前端界面",
   "description": "基于多模态大模型和Nano Banana绘画引擎，一键复刻海报设计风格与布局，生成高质量定制海报。",
   "requestFramePermissions": [
     "camera"

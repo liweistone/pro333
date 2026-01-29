@@ -1,67 +1,89 @@
 
-import { AspectRatio, ImageSize, GrsaiApiResponse } from "./types";
+import { AspectRatio, ImageSize } from "./types";
+import { API_CONFIG } from "@/apiConfig";
 
-const API_KEY = "sk-823abcd4cca74bd5972d3c05e1bece15";
-const BASE_URL = "https://grsai.dakka.com.cn";
+const BASE_URL = "https://api.apimart.ai/v1";
 
 /**
- * Create a new image generation task on Grsai platform.
+ * 提交万象批改任务
+ * 遵循主应用密钥管理逻辑：通过 API_CONFIG.DRAW_KEY 动态获取用户输入
  */
 export const createGenerationTask = async (
   prompt: string,
   config: { aspectRatio: AspectRatio; imageSize: ImageSize },
   referenceImages: string[] = []
 ): Promise<string> => {
-  const model = config.imageSize === ImageSize.K1 ? "nano-banana-pro" : "nano-banana-pro";
+  // 动态获取大厅设置的 Key
+  const API_KEY = API_CONFIG.DRAW_KEY;
   
-  const payload = {
-    model,
-    prompt,
-    aspectRatio: config.aspectRatio,
-    imageSize: config.imageSize,
-    urls: referenceImages,
-    webHook: "-1", 
-    shutProgress: false
-  };
-
-  const response = await fetch(`${BASE_URL}/v1/draw/nano-banana`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_KEY}`
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const result = await response.json();
-  if (result.code === 0 && result.data?.id) {
-    return result.data.id;
+  if (!API_KEY) {
+    throw new Error("请先在大厅右上角【设置】中配置 API 密钥");
   }
 
-  throw new Error(result.msg || result.error || "Failed to create task");
+  const payload = {
+    model: "gemini-3-pro-image-preview",
+    prompt,
+    size: config.aspectRatio === AspectRatio.AUTO ? "1:1" : config.aspectRatio,
+    resolution: config.imageSize,
+    n: 1,
+    image_urls: referenceImages.map(url => ({ url }))
+  };
+
+  try {
+    const response = await fetch(`${BASE_URL}/images/generations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const res = await response.json();
+    
+    if (res.code === 200 && Array.isArray(res.data) && res.data[0]?.task_id) {
+      return res.data[0].task_id;
+    } else {
+      throw new Error(res.msg || res.error?.message || "任务提交失败");
+    }
+  } catch (error: any) {
+    console.error("Batch Refine Submit Error:", error);
+    throw error;
+  }
 };
 
 /**
- * Poll the result of a specific task.
+ * 轮询批改任务结果
  */
-export const checkTaskStatus = async (taskId: string): Promise<GrsaiApiResponse['data']> => {
-  const response = await fetch(`${BASE_URL}/v1/draw/result`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_KEY}`
-    },
-    body: JSON.stringify({ id: taskId })
-  });
+export const checkTaskStatus = async (taskId: string): Promise<any> => {
+  const API_KEY = API_CONFIG.DRAW_KEY;
 
-  const result = await response.json();
-  if (result.code === 0) {
-    return result.data;
-  }
-  
-  if (result.code === -22) {
-    throw new Error("Task does not exist");
-  }
+  try {
+    const response = await fetch(`${BASE_URL}/tasks/${taskId}?language=zh`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`
+      }
+    });
 
-  throw new Error(result.msg || "Failed to check status");
+    const res = await response.json();
+    
+    if (res.code !== 200) {
+      throw new Error(res.data?.error?.message || "状态查询失败");
+    }
+
+    const taskData = res.data;
+    return {
+      id: taskData.id,
+      status: taskData.status === 'completed' ? 'succeeded' : (taskData.status === 'failed' ? 'failed' : 'running'),
+      progress: taskData.progress,
+      results: taskData.result?.images && taskData.result.images[0]?.url ? 
+        [{ url: taskData.result.images[0].url[0] }] : undefined,
+      failure_reason: taskData.error?.message,
+      error: taskData.error?.message
+    };
+  } catch (error: any) {
+    console.error("Batch Refine Polling Error:", error);
+    throw error;
+  }
 };

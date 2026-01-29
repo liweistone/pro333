@@ -1,6 +1,9 @@
 
-import { API_CONFIG } from "../../../apiConfig";
-
+/**
+ * 绘图引擎：APIMart API
+ * 密钥：sk-oQjs6JGV50ekbwuZL7tOkNjAsjByh6BlNcwYap0XKtEhGBkA
+ */
+const APIMART_KEY = "sk-oQjs6JGV50ekbwuZL7tOkNjAsjByh6BlNcwYap0XKtEhGBkA";
 const APIMART_BASE = "https://api.apimart.ai/v1";
 
 export async function createGenerationTask(params: {
@@ -14,7 +17,7 @@ export async function createGenerationTask(params: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_CONFIG.DRAW_KEY}`
+      'Authorization': `Bearer ${APIMART_KEY}`
     },
     body: JSON.stringify({
       model: "gemini-3-pro-image-preview",
@@ -37,7 +40,7 @@ export async function getTaskStatus(taskId: string): Promise<any> {
   const url = `${APIMART_BASE}/tasks/${taskId}?language=zh`;
   const response = await fetch(url, {
     headers: {
-      'Authorization': `Bearer ${API_CONFIG.DRAW_KEY}`
+      'Authorization': `Bearer ${APIMART_KEY}`
     }
   });
   return await response.json();
