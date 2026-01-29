@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import ImageConfig from './components/ImageConfig';
 import PromptInput from './components/PromptInput';
 import ImageGallery from './components/ImageGallery';
 import AssetManager from './components/AssetManager';
-import MainMaterialUpload from './components/MainMaterialUpload'; // 导入新组件
+import MainMaterialUpload from './components/MainMaterialUpload'; 
 import { AspectRatio, ImageSize, GeneratedImage, GenerationConfig, SubjectType, PoseCategory, ShootingAngle, ExtendedConfigState, LightingType } from './types';
 import { createGenerationTask, checkTaskStatus } from './aimgService';
 import { getCameraDescription } from './utils/cameraUtils';
@@ -16,11 +15,12 @@ import { getBodyDescription } from './utils/bodyUtils';
 
 const App: React.FC = () => {
   const [promptsText, setPromptsText] = useState('');
-  // Added missing 'model' property to initial GenerationConfig state to satisfy TypeScript requirements
+  
+  // 修改初始模型名称，使其与大项目旗舰标准完全对齐
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'nano-banana-pro'
+    model: 'gemini-3-pro-image-preview'
   });
 
   const [extendedConfig, setExtendedConfig] = useState<ExtendedConfigState>({
@@ -95,7 +95,7 @@ const App: React.FC = () => {
         const next = { ...prev, ...updates };
         if (updates.camera || updates.skeleton || updates.lighting || updates.expression || updates.bodyShape || updates.assets || updates.editorMode) {
              setPromptsText(prevText => {
-                 const tpl = "  [selected_pose], [expression], [body_shape], [selected_angle], [lighting], 8k";//A professional studio shot, 
+                 const tpl = "  [selected_pose], [expression], [body_shape], [selected_angle], [lighting], 8k";
                  if (!prevText.trim()) return tpl;
                  
                  let newText = prevText;
@@ -116,8 +116,6 @@ const App: React.FC = () => {
 
   const constructEnhancedPrompt = (basePrompt: string): string => {
     let enhancedPrompt = basePrompt.trim();
-    
-    // 根据启用状态决定是否添加相应描述
     const poseKeywords = extendedConfig.poseEnabled ? getPoseDescription(extendedConfig.skeleton) : "";
     const angleKeywords = extendedConfig.cameraEnabled ? getCameraDescription(extendedConfig.camera) : "";
     
@@ -129,15 +127,11 @@ const App: React.FC = () => {
     const expressionKeywords = extendedConfig.expressionEnabled ? getExpressionDescription(extendedConfig.expression) : "";
     const bodyKeywords = extendedConfig.bodyEnabled ? getBodyDescription(extendedConfig.bodyShape) : "";
 
-    if (referenceImages.length > 0) {
-        enhancedPrompt += ", ";//强调原图一致性based on the main reference image structure and pose
-    }
-
     if (extendedConfig.assets.faceImage) {
         enhancedPrompt += ", swap face with the provided face reference";
     }
     if (extendedConfig.assets.clothingImage) {
-        enhancedPrompt += ", wearing clothes from the provided clothing reference";//, maintaining the overall silhouette and key style features
+        enhancedPrompt += ", wearing clothes from the provided clothing reference";
         if (clothingAnalysis) {
           enhancedPrompt += `, ${clothingAnalysis}`;
         }
@@ -146,7 +140,6 @@ const App: React.FC = () => {
         enhancedPrompt += ", replace background with the provided background reference";
     }
 
-    // 替换占位符，只在对应功能启用时替换，否则替换为空字符串
     enhancedPrompt = enhancedPrompt
         .replace(/\[selected_pose\]/g, poseKeywords)
         .replace(/\[pose\]/g, poseKeywords)
@@ -159,95 +152,13 @@ const App: React.FC = () => {
         .replace(/\[selected_body_shape\]/g, bodyKeywords)
         .replace(/\[body_shape\]/g, bodyKeywords);
     
-    // 如果功能被禁用，则从最终提示词中移除相关描述
-    if (!extendedConfig.poseEnabled) {
-      enhancedPrompt = enhancedPrompt.replace(/\bstanding straight\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bposing\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bsitting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\blooking forward\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\blooking at camera\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bfront view\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bside pose\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bfull body shot\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bwaist up\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bchest up\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bportrait\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bprofile\b/gi, "");
-    }
-    
-    if (!extendedConfig.cameraEnabled) {
-      enhancedPrompt = enhancedPrompt.replace(/\beye-level shot\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bhigh angle shot\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\blow angle shot\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bdirect-on-camera perspective\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\b0-degree horizontal alignment\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bhead-on view\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bdirect front view\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bsymmetrical front shot\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bmedium waist-up shot\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bbalanced portrait framing\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bcinematic framing\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bclose-up\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bwide shot\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bmedium shot\b/gi, "");
-    }
-    
-    if (!extendedConfig.lightingEnabled) {
-      enhancedPrompt = enhancedPrompt.replace(/\bnatural lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bsoft lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bhard lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bbacklighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\brim lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bfill light\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bkey light\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bcatch light\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bstudio lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bgolden hour lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bblue hour lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bmoody lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bdramatic lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bflat lighting\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bcontrasty lighting\b/gi, "");
-    }
-    
-    if (!extendedConfig.expressionEnabled) {
-      enhancedPrompt = enhancedPrompt.replace(/\bsmile\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\blaughing\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bneutral expression\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bhappy\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bsad\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bserious\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bangry\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bsurprised\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bconfused\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bcalm\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\brelaxed\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bjoyful\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bexcited\b/gi, "");
-    }
-    
-    if (!extendedConfig.bodyEnabled) {
-      enhancedPrompt = enhancedPrompt.replace(/\bfit body\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bthin body\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bchubby body\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bathletic build\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bslim figure\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bcurvy body\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bhourglass shape\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bv-shaped torso\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bwell-proportioned\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bbalanced physique\b/gi, "");
-      enhancedPrompt = enhancedPrompt.replace(/\bstrong posture\b/gi, "");
-    }
-    
-    // 清理多余的空格和逗号
     enhancedPrompt = enhancedPrompt.replace(/\s+/g, ' ').trim();
     enhancedPrompt = enhancedPrompt.replace(/,+/g, ',');
     enhancedPrompt = enhancedPrompt.replace(/,\s*,/g, ',');
     enhancedPrompt = enhancedPrompt.replace(/,\s*$/g, '');
     
     if (!enhancedPrompt.toLowerCase().includes('professional photography')) {
-        enhancedPrompt += ", ";//质量提示词professional photography, highly detailed, sharp focus
+        enhancedPrompt += ", professional photography, highly detailed, sharp focus";
     }
     
     return enhancedPrompt;
@@ -269,22 +180,14 @@ const App: React.FC = () => {
     setResults(prev => [...newItems, ...prev]);
 
     const finalReferenceImages: string[] = [];
-    
-    // 1. 主素材 (Main Material)
-    if (referenceImages.length > 0) {
-        finalReferenceImages.push(referenceImages[0]);
-    }
-
-    // 2. 指定替换素材
+    if (referenceImages.length > 0) finalReferenceImages.push(referenceImages[0]);
     if (extendedConfig.assets.faceImage) finalReferenceImages.push(extendedConfig.assets.faceImage);
     if (extendedConfig.assets.clothingImage) finalReferenceImages.push(extendedConfig.assets.clothingImage);
     if (extendedConfig.assets.backgroundImage) finalReferenceImages.push(extendedConfig.assets.backgroundImage);
 
-    const payloadImages = finalReferenceImages.slice(0, 5);
-
     for (const item of newItems) {
       try {
-        const taskId = await createGenerationTask(item.prompt, config, payloadImages);
+        const taskId = await createGenerationTask(item.prompt, config, finalReferenceImages);
         updateResult(item.id, { taskId, status: 'running', progress: 5 });
         startPolling(item.id, taskId);
       } catch (error: any) {
@@ -295,39 +198,24 @@ const App: React.FC = () => {
   };
 
   const startPolling = (localId: string, taskId: string) => {
-    if (pollIntervals.current[localId]) window.clearInterval(pollIntervals.current[localId]);
-
     const intervalId = window.setInterval(async () => {
       try {
         const data = await checkTaskStatus(taskId);
         if (data.status === 'succeeded' && data.results?.[0]?.url) {
           updateResult(localId, { url: data.results[0].url, status: 'succeeded', progress: 100 });
-          stopPolling(localId);
+          window.clearInterval(intervalId);
         } else if (data.status === 'failed' || data.status === 'error') {
-          // 捕获失败原因和详细错误信息
-          updateResult(localId, { 
-            status: 'failed', 
-            failureReason: data.failure_reason, 
-            error: data.error || data.failure_reason || "API 内部处理失败" 
-          });
-          stopPolling(localId);
+          updateResult(localId, { status: 'failed', error: data.error || "生成任务异常" });
+          window.clearInterval(intervalId);
         } else {
           updateResult(localId, { progress: data.progress || 10, status: 'running' });
         }
       } catch (err: any) {
         updateResult(localId, { status: 'error', error: err.message });
-        stopPolling(localId);
+        window.clearInterval(intervalId);
       }
     }, 2000);
-
     pollIntervals.current[localId] = intervalId;
-  };
-
-  const stopPolling = (localId: string) => {
-    if (pollIntervals.current[localId]) {
-      window.clearInterval(pollIntervals.current[localId]);
-      delete pollIntervals.current[localId];
-    }
   };
 
   const updateResult = (id: string, updates: Partial<GeneratedImage>) => {
@@ -340,26 +228,18 @@ const App: React.FC = () => {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 flex flex-col md:flex-row gap-8">
         <aside className="w-full md:w-[420px] space-y-6">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-            
-            {/* 1. 核心底图 (最上方,视觉最强) */}
             <MainMaterialUpload referenceImages={referenceImages} onChange={setReferenceImages} />
-            
-            {/* 2. 高级素材 (中间,视觉较弱) */}
             <AssetManager 
                 assets={extendedConfig.assets} 
                 onChange={(a) => handleExtendedConfigChange({ assets: a })} 
                 clothingAnalysis={clothingAnalysis}
                 onAnalysisChange={setClothingAnalysis}
             />
-            
             <div className="border-t border-slate-100"></div>
-
-            {/* 3. 3D 角色与镜头控制 */}
             <h2 className="text-lg font-bold flex items-center gap-2 text-slate-900">
                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                3D 参数与环境配置
             </h2>
-            
             <ImageConfig 
                 config={config} 
                 onConfigChange={setConfig} 
@@ -367,7 +247,6 @@ const App: React.FC = () => {
                 onExtendedConfigChange={handleExtendedConfigChange} 
                 previewImage={referenceImages[0]} 
             />
-            
             <div className="mt-6">
               <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">批量提示词</label>
               <PromptInput value={promptsText} onChange={setPromptsText} isGenerating={isGenerating} onGenerate={startGeneration} />
@@ -378,11 +257,7 @@ const App: React.FC = () => {
           </div>
         </aside>
         <section className="flex-1">
-          <ImageGallery items={results} onRetry={(item) => {
-              const basePrompt = promptsText.split('\n')[0] || item.prompt;
-              setPromptsText(basePrompt);
-              startGeneration();
-          }} />
+          <ImageGallery items={results} onRetry={startGeneration} />
         </section>
       </main>
     </div>
