@@ -1,3 +1,4 @@
+
 import { GenerationConfig } from "./types";
 import { ApimartGenerationRequest } from "../app1/typesApimart";
 import { API_CONFIG } from "@/apiConfig";
@@ -14,6 +15,7 @@ export const createGenerationTask = async (
   referenceImages: string[] = []
 ): Promise<string> => {
   const payload: ApimartGenerationRequest = {
+    // 统一模型名称：gemini-3-pro-image-preview
     model: 'gemini-3-pro-image-preview',
     prompt: prompt,
     size: config.aspectRatio,
@@ -61,7 +63,6 @@ export const checkTaskStatus = async (taskId: string): Promise<any> => {
 
   const result = await response.json();
   if (result.code === 200) {
-    // 将 Apimart 的响应格式转换为应用期望的格式
     const taskData = result.data;
     return {
       id: taskData.id,

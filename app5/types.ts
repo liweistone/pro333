@@ -20,11 +20,8 @@ export enum ImageSize {
 }
 
 export enum ModelType {
-  NANO_BANANA_PRO = "nano-banana-pro",
-  NANO_BANANA_PRO_VT = "nano-banana-pro-vt",
-  NANO_BANANA_PRO_CL = "nano-banana-pro-cl",
-  NANO_BANANA_PRO_VIP = "nano-banana-pro-vip",
-  NANO_BANANA_PRO_4K_VIP = "nano-banana-pro-4k-vip"
+  GEMINI_3_PRO_IMAGE = "gemini-3-pro-image-preview",
+  GEMINI_3_PRO_IMAGE_VIP = "gemini-3-pro-image-preview"
 }
 
 export interface GeneratedImage {

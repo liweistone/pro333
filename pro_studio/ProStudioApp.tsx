@@ -1,4 +1,3 @@
-// Fix: Restored correct import statement and removed mangled code snippet from the file header
 import React, { useState, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
 
@@ -21,7 +20,7 @@ const ProStudioApp: React.FC = () => {
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'nano-banana-pro'
+    model: 'gemini-3-pro-image-preview'
   });
 
   const [extendedConfig, setExtendedConfig] = useState<ExtendedConfigState>({
@@ -36,7 +35,7 @@ const ProStudioApp: React.FC = () => {
       elevation: 0, 
       distance: 1.0
     },
-    cameraEnabled: false, // 默认禁用
+    cameraEnabled: false, 
     skeleton: {
         hips: { rotation: [0, 0, 0] },
         spine: { rotation: [0, 0, 0] },
@@ -47,7 +46,7 @@ const ProStudioApp: React.FC = () => {
         leftHip: { rotation: [0, 0, 0] },
         rightHip: { rotation: [0, 0, 0] }
     },
-    poseEnabled: false, // 默认禁用
+    poseEnabled: false, 
     lighting: {
         azimuth: 45,
         elevation: 45,
@@ -55,7 +54,7 @@ const ProStudioApp: React.FC = () => {
         color: "#ffffff",
         type: LightingType.DEFAULT
     },
-    lightingEnabled: false, // 默认禁用
+    lightingEnabled: false, 
     expression: {
         presetId: 'neutral',
         happiness: 0,
@@ -65,7 +64,7 @@ const ProStudioApp: React.FC = () => {
         gazeX: 0,
         gazeY: 0
     },
-    expressionEnabled: false, // 默认禁用
+    expressionEnabled: false, 
     bodyShape: {
         build: 0,
         shoulderWidth: 0,
@@ -74,7 +73,7 @@ const ProStudioApp: React.FC = () => {
         hipWidth: 0,
         legLength: 0
     },
-    bodyEnabled: false, // 默认禁用
+    bodyEnabled: false, 
     assets: { 
         faceImage: null,
         clothingImage: null,
@@ -99,13 +98,9 @@ const ProStudioApp: React.FC = () => {
   const handleExtendedConfigChange = (updates: Partial<ExtendedConfigState>) => {
     setExtendedConfig(prev => {
         const next = { ...prev, ...updates };
-        
-        // 优化提示词自动补全逻辑：仅在用户显式开启某个开关时，才按需添加对应的占位符
         if (updates.cameraEnabled === true || updates.poseEnabled === true || updates.lightingEnabled === true || updates.expressionEnabled === true || updates.bodyEnabled === true) {
             setPromptsText(prevText => {
                 let newText = prevText;
-                const useBg = !!(updates.assets?.backgroundImage || prev.assets.backgroundImage);
-
                 if (updates.poseEnabled === true && !newText.includes("[selected_pose]")) {
                     newText = newText.trim() ? `${newText}, [selected_pose]` : "[selected_pose]";
                 }
@@ -118,10 +113,9 @@ const ProStudioApp: React.FC = () => {
                 if (updates.cameraEnabled === true && !newText.includes("[selected_angle]")) {
                     newText = newText.trim() ? `${newText}, [selected_angle]` : "[selected_angle]";
                 }
-                if (updates.lightingEnabled === true && !newText.includes("[lighting]") && !useBg) {
+                if (updates.lightingEnabled === true && !newText.includes("[lighting]")) {
                     newText = newText.trim() ? `${newText}, [lighting]` : "[lighting]";
                 }
-                
                 return newText;
             });
         }
@@ -131,53 +125,16 @@ const ProStudioApp: React.FC = () => {
 
   const constructEnhancedPrompt = (basePrompt: string): string => {
     let enhancedPrompt = basePrompt.trim();
-    
-    // 逻辑开关：只有在对应的功能启用时，才生成描述词；否则输出空值
     const poseKeywords = extendedConfig.poseEnabled ? getPoseDescription(extendedConfig.skeleton) : "";
     const angleKeywords = extendedConfig.cameraEnabled ? getCameraDescription(extendedConfig.camera) : "";
-    
-    const isLongShot = extendedConfig.cameraEnabled && extendedConfig.camera.distance > 1.6;
-    const isExtremeTopView = extendedConfig.cameraEnabled && extendedConfig.camera.elevation > 82;
-    const isExtremeBottomView = extendedConfig.cameraEnabled && extendedConfig.camera.elevation < -82;
-
     let lightingKeywords = extendedConfig.lightingEnabled ? getLightingDescription(extendedConfig.lighting) : "";
-    if (extendedConfig.assets.backgroundImage) {
-        lightingKeywords = lightingKeywords.replace(/clean background|studio|sunlight|night scene/gi, "").trim();
-    }
-
     const expressionKeywords = extendedConfig.expressionEnabled ? getExpressionDescription(extendedConfig.expression) : "";
     const bodyKeywords = extendedConfig.bodyEnabled ? getBodyDescription(extendedConfig.bodyShape) : "";
 
-    if (referenceImages.length > 0) {
-        if (isLongShot || isExtremeTopView) {
-            enhancedPrompt += ", ignore the main reference person scale, make the person much smaller, change perspective completely";
-        } else {
-            enhancedPrompt += ",  ";
-        }
-    }
+    if (extendedConfig.assets.faceImage) enhancedPrompt += ", swap face with the provided face reference";
+    if (extendedConfig.assets.clothingImage) enhancedPrompt += `, A high-fidelity photograph, ${clothingAnalysis || "wearing provided garment"}`;
+    if (extendedConfig.assets.backgroundImage) enhancedPrompt += ", replace background with the provided background reference";
 
-    if (extendedConfig.assets.faceImage) {
-        enhancedPrompt += ", swap face with the provided face reference";
-    }
-    if (extendedConfig.assets.clothingImage) {
-        enhancedPrompt += ",A high-fidelity photograph based on the structure of [Image_1_Model_Base]. 1. BASE MODEL RETENTION: Retain the exact subject identity (gender unspecified), pose, body shape, framing (crop or full-body), and background environment as depicted in [Image_1_Model_Base]. Any body parts or clothing areas not covered by the new target garment must remain completely unchanged. 2. TARGET GARMENT APPLICATION: The subject is now wearing the main garment visualized in [Image_2_Main_Garment]. This new garment replaces the original clothing in the corresponding anatomical area, draping naturally according to the subject's pose in [Image_1_Model_Base]. 3. MANDATORY DETAIL ENFORCEMENT (CRITICAL): The rendered garment on the model must be a precise reconstruction incorporating the specific micro-details from the reference images. The AI is not allowed to hallucinate details; it must strictly use the provided references: * Apply the exact fabric texture, pattern, material quality, and stitching style visible in [Image_3_Detail_Ref]. * Incorporate specific functional elements, hardware (zippers, buttons, pulls), or closure mechanisms precisely as detailed in [Image_4_Detail_Ref]. * Replicate fine structural details, such as cuff construction, hem finishing, lining, or layering elements, exactly as presented in [Image_5_Detail_Ref]. FINAL SYNTHESIS: The final output must be a realistic integration of the garment defined by [Image_2] and its details [Image_3-5] onto the base subject of [Image_1], with consistent lighting and realistic fabric physics.";
-        if (clothingAnalysis) {
-          enhancedPrompt += `, (garment structural details: ${clothingAnalysis}:1.4)`;
-        }
-    }
-    if (extendedConfig.assets.backgroundImage) {
-        enhancedPrompt += ", replace background with the provided background reference";
-    }
-
-    if (extendedConfig.cameraEnabled && extendedConfig.camera.distance > 2.5) {
-        enhancedPrompt = `(A vast expansive scenery:1.3), ${enhancedPrompt}`;
-    }
-    
-    if (isExtremeTopView) {
-        enhancedPrompt = `(Extreme overhead perspective:1.4), (nadir shot of ground:1.3), flat lay composition, ${enhancedPrompt.replace(/portrait|looking at camera/gi, "looking down")}`;
-    }
-
-    // 替换占位符，若功能关闭则会替换为空字符串
     enhancedPrompt = enhancedPrompt
         .replace(/\[(selected_)?pose\]/g, poseKeywords)
         .replace(/\[(selected_)?angle\]/g, angleKeywords)
@@ -185,24 +142,7 @@ const ProStudioApp: React.FC = () => {
         .replace(/\[(selected_)?expression\]/g, expressionKeywords)
         .replace(/\[(selected_)?body_shape\]/g, bodyKeywords);
     
-    if (!enhancedPrompt.toLowerCase().includes('professional photography')) {
-        enhancedPrompt += ", ";
-    }
-
-    if (isLongShot) {
-        enhancedPrompt += ", small person scale, miniature figure, cinematic landscape focus";
-    }
-    if (isExtremeBottomView) {
-        enhancedPrompt += ", (zenith perspective:1.5), hero shot from very low ground, giant scale";
-    }
-    
-    // 鲁棒清理逻辑：去除多余逗号、空格以及末尾的标点
-    return enhancedPrompt
-        .replace(/,+/g, ',')
-        .replace(/,\s*,/g, ',')
-        .replace(/\s\s+/g, ' ')
-        .replace(/,\s*$/g, '')
-        .trim();
+    return enhancedPrompt.replace(/,+/g, ',').replace(/,\s*,/g, ',').replace(/\s\s+/g, ' ').replace(/,\s*$/g, '').trim();
   };
 
   const startGeneration = async () => {
@@ -226,11 +166,9 @@ const ProStudioApp: React.FC = () => {
     if (extendedConfig.assets.clothingImage) finalReferenceImages.push(extendedConfig.assets.clothingImage);
     if (extendedConfig.assets.backgroundImage) finalReferenceImages.push(extendedConfig.assets.backgroundImage);
 
-    const payloadImages = finalReferenceImages.slice(0, 5);
-
     for (const item of newItems) {
       try {
-        const taskId = await createGenerationTask(item.prompt, config, payloadImages);
+        const taskId = await createGenerationTask(item.prompt, config, finalReferenceImages);
         updateResult(item.id, { taskId, status: 'running', progress: 5 });
         startPolling(item.id, taskId);
       } catch (error: any) {
@@ -241,87 +179,52 @@ const ProStudioApp: React.FC = () => {
   };
 
   const startPolling = (localId: string, taskId: string) => {
-    if (pollIntervals.current[localId]) window.clearInterval(pollIntervals.current[localId]);
-
     const intervalId = window.setInterval(async () => {
       try {
         const data = await checkTaskStatus(taskId);
         if (data.status === 'succeeded' && data.results?.[0]?.url) {
           updateResult(localId, { url: data.results[0].url, status: 'succeeded', progress: 100 });
-          stopPolling(localId);
+          window.clearInterval(intervalId);
         } else if (data.status === 'failed' || data.status === 'error') {
-          updateResult(localId, { 
-            status: 'failed', 
-            failureReason: data.failure_reason, 
-            error: data.error || data.failure_reason || "API 内部处理失败" 
-          });
-          stopPolling(localId);
+          updateResult(localId, { status: 'failed', error: data.error || "API 内部处理失败" });
+          window.clearInterval(intervalId);
         } else {
           updateResult(localId, { progress: data.progress || 10, status: 'running' });
         }
       } catch (err: any) {
         updateResult(localId, { status: 'error', error: err.message });
-        stopPolling(localId);
+        window.clearInterval(intervalId);
       }
     }, 2000);
-
     pollIntervals.current[localId] = intervalId;
-  };
-
-  const stopPolling = (localId: string) => {
-    if (pollIntervals.current[localId]) {
-      window.clearInterval(pollIntervals.current[localId]);
-      delete pollIntervals.current[localId];
-    }
   };
 
   const updateResult = (id: string, updates: Partial<GeneratedImage>) => {
     setResults(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
   };
 
-  const sanitizeFilename = (text: string) => {
-    return text.trim()
-      .replace(/[\\/:\*\?"<>\|]/g, '-')
-      .replace(/\s+/g, '-')
-      .slice(0, 50);
-  };
-
   const handleBatchDownload = async () => {
     const successfulItems = results.filter(item => item.status === 'succeeded' && item.url);
     if (successfulItems.length === 0) return;
-
     setIsBatchDownloading(true);
     try {
       const zip = new JSZip();
-      const downloadPromises = successfulItems.map(async (item) => {
-        try {
-          const response = await fetch(item.url!, { mode: 'cors' });
-          if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-          const blob = await response.blob();
-          const safeBaseName = sanitizeFilename(item.prompt) || '智拍成品';
-          const fileName = `${safeBaseName}-${item.id.slice(-4)}.png`;
-          zip.file(fileName, blob);
-        } catch (e) {
-          console.error(`下载图片失败: ${item.url}`, e);
-        }
-      });
-
-      await Promise.all(downloadPromises);
+      await Promise.all(successfulItems.map(async (item) => {
+        const response = await fetch(item.url!, { mode: 'cors' });
+        const blob = await response.blob();
+        zip.file(`StudioPro-${item.id.slice(-4)}.png`, blob);
+      }));
       const content = await zip.generateAsync({ type: 'blob' });
-      const blobUrl = window.URL.createObjectURL(content);
       const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `智拍大师-批量导出-${new Date().getTime()}.zip`;
+      link.href = window.URL.createObjectURL(content);
+      link.download = `智拍大师-批量导出-${Date.now()}.zip`;
       link.click();
-      window.URL.revokeObjectURL(blobUrl);
     } catch (error: any) {
       alert(`打包失败: ${error.message}`);
     } finally {
       setIsBatchDownloading(false);
     }
   };
-
-  const successfulCount = results.filter(i => i.status === 'succeeded').length;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -364,37 +267,20 @@ const ProStudioApp: React.FC = () => {
                <p className="text-sm text-slate-500">智拍大师实时反馈生成进度</p>
             </div>
             <div className="flex items-center gap-3">
-              {successfulCount > 0 && (
-                <button 
-                  onClick={handleBatchDownload}
-                  disabled={isBatchDownloading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${
-                    isBatchDownloading 
-                    ? 'bg-slate-100 text-slate-400 cursor-wait' 
-                    : 'bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 hover:shadow-md'
-                  }`}
-                >
-                  {isBatchDownloading ? '正在打包...' : `一键批量下载 (${successfulCount})`}
-                </button>
-              )}
-              {results.length > 0 && (
-                <button onClick={() => setResults([])} className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors bg-white rounded-lg border border-slate-100">
-                  清空列表
+              {results.filter(i => i.status === 'succeeded').length > 0 && (
+                <button onClick={handleBatchDownload} disabled={isBatchDownloading} className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-100 rounded-lg text-sm font-bold shadow-sm">
+                  {isBatchDownloading ? '正在打包...' : `批量下载 (${results.filter(i => i.status === 'succeeded').length})`}
                 </button>
               )}
             </div>
           </div>
           {results.length === 0 ? (
-            <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl h-[600px] flex flex-col items-center justify-center text-slate-400 shadow-sm text-center px-4">
+            <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl h-[600px] flex flex-col items-center justify-center text-slate-400">
               <p className="text-lg font-semibold text-slate-600">欢迎使用智拍大师 Pro</p>
-              <p className="text-sm text-slate-400 mt-1">上传参考素材并配置 3D 参数，即可开始批量创作</p>
+              <p className="text-sm text-slate-400 mt-1">上传底图并配置 3D 参数即可开始</p>
             </div>
           ) : (
-            <ImageGallery items={results} onRetry={(item) => {
-                const basePrompt = promptsText.split('\n')[0] || item.prompt;
-                setPromptsText(basePrompt);
-                startGeneration();
-            }} />
+            <ImageGallery items={results} onRetry={startGeneration} />
           )}
         </section>
       </main>

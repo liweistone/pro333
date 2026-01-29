@@ -1,9 +1,12 @@
-
-import { GoogleGenAI } from "@google/genai";
+import { ImageAdapter } from "../services/adapters/imageAdapter";
+import { TaskAdapter } from "../services/adapters/taskAdapter";
 import { AspectRatio, ImageSize } from "./types";
 
+const imageAdapter = new ImageAdapter();
+const taskAdapter = new TaskAdapter();
+
 /**
- * Generate or edit an image using Gemini models.
+ * Generate or edit an image using Apimart models.
  * For 2K/4K resolution, it uses 'gemini-3-pro-image-preview'.
  * Otherwise, it uses 'gemini-2.5-flash-image'.
  */
@@ -12,54 +15,47 @@ export const generateOrEditImage = async (
   config: { aspectRatio: AspectRatio; imageSize: ImageSize },
   referenceImages: string[] = []
 ): Promise<string> => {
-  // Always create a new instance right before calling to ensure latest API key
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
   const isHighQuality = config.imageSize === ImageSize.K2 || config.imageSize === ImageSize.K4;
   const model = isHighQuality ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
 
-  const parts: any[] = [];
-  
-  // Add reference images for editing or multi-modal context
-  for (const dataUrl of referenceImages) {
-    const [header, data] = dataUrl.split(',');
-    const mimeType = header.match(/:(.*?);/)?.[1] || 'image/png';
-    parts.push({
-      inlineData: {
-        data,
-        mimeType
+  try {
+    // 提交生成任务
+    const taskId = await imageAdapter.createGenerationTask(
+      prompt,
+      {
+        model,
+        size: config.aspectRatio === AspectRatio.AUTO ? "1:1" : config.aspectRatio,
+        resolution: config.imageSize
+      },
+      referenceImages
+    );
+
+    // 等待任务完成并获取结果
+    let status;
+    do {
+      status = await taskAdapter.getTaskStatus(taskId);
+      if (status.status !== 'running' && status.status !== 'processing') {
+        break;
       }
-    });
-  }
+      // 等待一段时间再查询
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    } while (status.status === 'running' || status.status === 'processing');
 
-  // Add the text prompt
-  parts.push({ text: prompt });
-
-  // Map AspectRatio to supported values: "1:1", "3:4", "4:3", "9:16", "16:9"
-  const supportedRatios = ["1:1", "3:4", "4:3", "9:16", "16:9"];
-  const finalAspectRatio = (supportedRatios.includes(config.aspectRatio) ? config.aspectRatio : "1:1") as any;
-
-  const response = await ai.models.generateContent({
-    model,
-    contents: { parts },
-    config: {
-      imageConfig: {
-        aspectRatio: finalAspectRatio,
-        // Only gemini-3-pro-image-preview supports imageSize
-        ...(isHighQuality ? { imageSize: config.imageSize } : {})
-      }
+    if (status.status === 'succeeded' && status.imageUrl) {
+      // 获取图像数据
+      const response = await fetch(status.imageUrl);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } else {
+      throw new Error(status.error || "图像生成失败");
     }
-  });
-
-  // Extract the image part from the response candidates
-  const parts_out = response.candidates?.[0]?.content?.parts;
-  if (parts_out) {
-    for (const part of parts_out) {
-      if (part.inlineData) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-      }
-    }
+  } catch (error: any) {
+    console.error("Apimart 图像生成错误:", error);
+    throw new Error(error.message || "图像生成失败");
   }
-
-  throw new Error("No image was returned from the model.");
 };

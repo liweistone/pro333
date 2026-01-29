@@ -1,89 +1,54 @@
-
 import { AspectRatio, ImageSize } from "./types";
-import { API_CONFIG } from "@/apiConfig";
+import { ImageAdapter } from "../services/adapters/imageAdapter";
+import { TaskAdapter } from "../services/adapters/taskAdapter";
 
-const BASE_URL = "https://api.apimart.ai/v1";
+const imageAdapter = new ImageAdapter();
+const taskAdapter = new TaskAdapter();
 
 /**
  * 提交万象批改任务
- * 遵循主应用密钥管理逻辑：通过 API_CONFIG.DRAW_KEY 动态获取用户输入
+ * 使用统一的Apimart适配器
  */
 export const createGenerationTask = async (
   prompt: string,
   config: { aspectRatio: AspectRatio; imageSize: ImageSize },
   referenceImages: string[] = []
 ): Promise<string> => {
-  // 动态获取大厅设置的 Key
-  const API_KEY = API_CONFIG.DRAW_KEY;
-  
-  if (!API_KEY) {
-    throw new Error("请先在大厅右上角【设置】中配置 API 密钥");
-  }
-
-  const payload = {
-    model: "gemini-3-pro-image-preview",
-    prompt,
-    size: config.aspectRatio === AspectRatio.AUTO ? "1:1" : config.aspectRatio,
-    resolution: config.imageSize,
-    n: 1,
-    image_urls: referenceImages.map(url => ({ url }))
-  };
-
   try {
-    const response = await fetch(`${BASE_URL}/images/generations`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+    const taskId = await imageAdapter.createGenerationTask(
+      prompt,
+      {
+        model: "gemini-3-pro-image-preview",
+        size: config.aspectRatio === AspectRatio.AUTO ? "1:1" : config.aspectRatio,
+        resolution: config.imageSize,
+        n: 1
       },
-      body: JSON.stringify(payload)
-    });
+      referenceImages
+    );
 
-    const res = await response.json();
-    
-    if (res.code === 200 && Array.isArray(res.data) && res.data[0]?.task_id) {
-      return res.data[0].task_id;
-    } else {
-      throw new Error(res.msg || res.error?.message || "任务提交失败");
-    }
+    return taskId;
   } catch (error: any) {
-    console.error("Batch Refine Submit Error:", error);
+    console.error("Apimart Submit Error:", error);
     throw error;
   }
 };
 
-/**
- * 轮询批改任务结果
- */
 export const checkTaskStatus = async (taskId: string): Promise<any> => {
-  const API_KEY = API_CONFIG.DRAW_KEY;
-
   try {
-    const response = await fetch(`${BASE_URL}/tasks/${taskId}?language=zh`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`
-      }
-    });
-
-    const res = await response.json();
+    const status = await taskAdapter.getTaskStatus(taskId);
     
-    if (res.code !== 200) {
-      throw new Error(res.data?.error?.message || "状态查询失败");
-    }
-
-    const taskData = res.data;
     return {
-      id: taskData.id,
-      status: taskData.status === 'completed' ? 'succeeded' : (taskData.status === 'failed' ? 'failed' : 'running'),
-      progress: taskData.progress,
-      results: taskData.result?.images && taskData.result.images[0]?.url ? 
-        [{ url: taskData.result.images[0].url[0] }] : undefined,
-      failure_reason: taskData.error?.message,
-      error: taskData.error?.message
+      id: taskId,
+      status: status.status === 'completed' || status.status === 'succeeded' ? 'succeeded' : 
+             (status.status === 'failed' ? 'failed' : 'running'),
+      progress: status.progress,
+      results: status.imageUrl ? 
+        [{ url: status.imageUrl }] : undefined,
+      failure_reason: status.error,
+      error: status.error
     };
   } catch (error: any) {
-    console.error("Batch Refine Polling Error:", error);
+    console.error("Apimart Polling Error:", error);
     throw error;
   }
 };

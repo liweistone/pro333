@@ -11,10 +11,11 @@ import JSZip from 'jszip';
 
 const App: React.FC = () => {
   const [promptsText, setPromptsText] = useState('');
+  // 修正：将默认模型修改为 gemini-3-pro-image-preview
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'nano-banana-pro'
+    model: 'gemini-3-pro-image-preview'
   });
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [results, setResults] = useState<GeneratedImage[]>([]);

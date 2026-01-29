@@ -8,13 +8,15 @@ import SmartBatchGenerator from '../app2/components/SmartBatchGenerator';
 import { AspectRatio, ImageSize, GeneratedImage, GenerationConfig } from '../app2/types';
 import { createGenerationTask, checkTaskStatus } from '../app2/visionService';
 import JSZip from 'jszip';
+import { Download, Package, Trash2, Loader2, Layers } from 'lucide-react';
 
 const BatchMasterApp: React.FC = () => {
   const [promptsText, setPromptsText] = useState('');
+  // 核心修复：修改初始状态中的模型名称，确保 Apimart 识别正确渠道
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'nano-banana-pro'
+    model: 'gemini-3-pro-image-preview'
   });
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [results, setResults] = useState<GeneratedImage[]>([]);
@@ -118,7 +120,7 @@ const BatchMasterApp: React.FC = () => {
       .slice(0, 50);
   };
 
-  const handleBatchDownload = async () => {
+  const handleBatchZipDownload = async () => {
     const successfulItems = results.filter(item => item.status === 'succeeded' && item.url);
     if (successfulItems.length === 0) return;
 
@@ -145,13 +147,37 @@ const BatchMasterApp: React.FC = () => {
       const blobUrl = window.URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `裂变大师-批量导出-${new Date().getTime()}.zip`;
+      link.download = `裂变大师-批量打包-${new Date().getTime()}.zip`;
       link.click();
       window.URL.revokeObjectURL(blobUrl);
     } catch (error: any) {
       alert(`打包失败: ${error.message}`);
     } finally {
       setIsBatchDownloading(false);
+    }
+  };
+
+  const handleBatchSingleDownload = async () => {
+    const successfulItems = results.filter(item => item.status === 'succeeded' && item.url);
+    if (successfulItems.length === 0) return;
+
+    for (const item of successfulItems) {
+      try {
+        const response = await fetch(item.url!, { mode: 'cors' });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const safeBaseName = sanitizeFilename(item.prompt) || '电商主图';
+        link.download = `${safeBaseName}-${item.id.slice(-4)}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        await new Promise(r => setTimeout(r, 400));
+      } catch (e) {
+        console.error("单张下载失败", e);
+      }
     }
   };
 
@@ -229,34 +255,47 @@ const BatchMasterApp: React.FC = () => {
         </aside>
 
         <section className="flex-1">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                <h2 className="text-2xl font-bold text-slate-800">生成画廊</h2>
                <p className="text-sm text-slate-500">所有裂变生成的图像将实时反馈进度</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {successfulCount > 0 && (
-                <button 
-                  onClick={handleBatchDownload}
-                  disabled={isBatchDownloading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${
-                    isBatchDownloading 
-                    ? 'bg-slate-100 text-slate-400 cursor-wait' 
-                    : 'bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 hover:shadow-md'
-                  }`}
-                >
-                  {isBatchDownloading ? '正在打包...' : `一键批量下载 (${successfulCount})`}
-                </button>
+                <>
+                  <button 
+                    onClick={handleBatchSingleDownload}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-100 rounded-lg text-xs font-bold hover:bg-blue-50 transition-all shadow-sm"
+                  >
+                    <Download className="w-3.5 h-3.5" /> 批量单张下载
+                  </button>
+                  <button 
+                    onClick={handleBatchZipDownload}
+                    disabled={isBatchDownloading}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                      isBatchDownloading 
+                      ? 'bg-slate-100 text-slate-400 cursor-wait' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                    }`}
+                  >
+                    {isBatchDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+                    {isBatchDownloading ? '打包中...' : `打包 ZIP 下载 (${successfulCount})`}
+                  </button>
+                </>
               )}
               {results.length > 0 && (
-                <button onClick={() => setResults([])} className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors bg-white rounded-lg border border-slate-100">
-                  清空列表
+                <button 
+                  onClick={() => setResults([])} 
+                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors bg-white rounded-lg border border-slate-100 flex items-center gap-2"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> 清空画廊
                 </button>
               )}
             </div>
           </div>
           {results.length === 0 ? (
             <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl h-[600px] flex flex-col items-center justify-center text-slate-400 shadow-sm text-center px-4">
+              <Layers className="w-16 h-16 text-slate-100 mb-4" />
               <p className="text-lg font-semibold text-slate-600">欢迎使用裂变大师</p>
               <p className="text-sm text-slate-400 mt-1">上传参考素材并进行特征分析，即可一键裂变多视角主图</p>
             </div>

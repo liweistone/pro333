@@ -24,10 +24,11 @@ export interface GeneratedImage {
   taskId?: string; 
   prompt: string;
   url: string | null;
-  refThumbnail?: string; // 新增：记录当前任务使用的序列参考图
+  refThumbnail?: string; 
   progress: number;
   status: 'pending' | 'running' | 'succeeded' | 'failed' | 'error';
   error?: string;
+  aspectRatio?: AspectRatio;
 }
 
 export interface GenerationConfig {

@@ -16,7 +16,7 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: ModelType.NANO_BANANA_PRO // 内部映射为 gemini-3-pro-image-preview
+    model: ModelType.GEMINI_3_PRO_IMAGE
   });
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [results, setResults] = useState<GeneratedImage[]>([]);

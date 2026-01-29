@@ -5,15 +5,14 @@ import { Image as ImageIcon, Type, Sparkles, CheckCircle2, AlertCircle, Loader2,
 import FileSaver from 'file-saver';
 
 const CHAT_MODELS = [
-  { id: 'gemini-3-pro', name: 'Gemini 3 Pro (高精度分析)' },
+  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (高精度分析)' },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (平衡型)' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (极速)' }
 ];
 
 const DRAW_MODELS = [
-  { id: 'nano-banana-pro-vip', name: 'Nano Banana VIP (高相似度)' },
-  { id: 'nano-banana-pro-4k-vip', name: 'Nano Banana 4K (极致画质)' },
-  { id: 'nano-banana-pro', name: 'Nano Banana (基础型)' }
+  { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image (旗舰重构)' },
+  { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro 4K (极致画质)' }
 ];
 
 const ASPECT_RATIOS = [
@@ -112,12 +111,10 @@ const PosterApp: React.FC = () => {
       try {
         const data = await getResultById(taskId);
         
-        // 关键逻辑修复：映射 API 的状态到本地 UI 状态
-        // API 状态包括: running, succeeded, failed
         let normalizedStatus: 'processing' | 'succeeded' | 'failed' = 'processing';
         if (data.status === 'succeeded') normalizedStatus = 'succeeded';
         else if (data.status === 'failed') normalizedStatus = 'failed';
-        else normalizedStatus = 'processing'; // 包括 'running', 'pending' 等
+        else normalizedStatus = 'processing'; 
 
         setTaskList(prev => prev.map(t => t.id === taskId ? { 
           ...t, 
@@ -186,7 +183,6 @@ const PosterApp: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-8 space-y-12 animate-in fade-in duration-500">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        {/* 左侧上传与配置 */}
         <div className="lg:col-span-4 flex">
           <section className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col w-full h-full">
             <div className="flex items-center space-x-3 mb-8 shrink-0">
@@ -246,7 +242,6 @@ const PosterApp: React.FC = () => {
           </section>
         </div>
 
-        {/* 右侧分析面板 */}
         <div className="lg:col-span-8 flex">
           <section className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-100 flex-1 flex flex-col relative overflow-hidden">
             {isAnalyzing && (
@@ -310,7 +305,6 @@ const PosterApp: React.FC = () => {
                             </div>
                           )}
                         </div>
-                        {/* Fix: Use a callback ref with curly braces to avoid returning the assignment result, satisfying Ref type constraints */}
                         <input type="file" ref={el => { slotInputRefs.current[slot.id] = el; }} className="hidden" onChange={(e) => handleSlotUpload(slot.id, e)} />
                       </div>
                     )) : (
@@ -327,7 +321,6 @@ const PosterApp: React.FC = () => {
         </div>
       </div>
 
-      {/* 创作画廊 */}
       <section className="space-y-8 pb-12">
         <div className="flex items-center justify-between border-b border-slate-200 pb-6">
           <div className="flex items-center space-x-3 text-slate-800">
@@ -395,7 +388,6 @@ const PosterApp: React.FC = () => {
                       <p className="text-[10px] text-slate-400 font-bold uppercase">{task.failureReason || '生成失败'}</p>
                     </div>
                   ) : (
-                    /* 兜底状态：如果既不是处理中也不是成功，且不是明确的失败，则作为处理中展示 */
                     <div className="w-full h-full p-8 flex flex-col items-center justify-center space-y-6">
                       <Loader2 size={32} className="animate-spin text-slate-300" />
                       <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">排队中...</p>
@@ -424,7 +416,6 @@ const PosterApp: React.FC = () => {
         )}
       </section>
 
-      {/* 全屏放大预览 Modal */}
       {previewImageUrl && (
         <div 
           className="fixed inset-0 z-[100] bg-slate-950/98 backdrop-blur-3xl flex items-center justify-center p-6 animate-in fade-in duration-300"

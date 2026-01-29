@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GeneratedImage, AspectRatio } from '../types';
 
@@ -173,7 +174,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-blue-500 font-bold bg-blue-50 px-1.5 py-0.5 rounded">{item.aspectRatio}</span>
-                  <span className="text-[10px] text-slate-400 font-mono">NANO-PRO</span>
+                  <span className="text-[10px] text-slate-400 font-mono uppercase tracking-tighter">GEMINI-IMAGE-PRO</span>
                 </div>
               </div>
             )}

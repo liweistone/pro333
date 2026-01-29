@@ -1,30 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import ProStudioApp from './pro_studio/ProStudioApp';
 import BatchMasterApp from './batch_master/BatchMasterApp';
+import ProStudioApp from './pro_studio/ProStudioApp';
 import App3PosterApp from './app3/App';
 import App4EcomApp from './app4/App';
 import App5RefineApp from './app5/App'; 
 import App6LumiFluxApp from './app6/App';
 import App7PresetHub from './app7/App';
 import App8CorrectApp from './app8/App';
-import { LayoutGrid, Sparkles, ArrowRight, Move3d, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2, Zap, Database, PencilLine } from 'lucide-react';
+import { LayoutGrid, Sparkles, ArrowRight, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2, Zap, Database, PencilLine, Globe, Home, Camera } from 'lucide-react';
 import { saveUserKeys, clearUserKeys } from './apiConfig';
 
 const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatusChange: () => void }> = ({ isOpen, onClose, onStatusChange }) => {
-  const [drawKey, setDrawKey] = useState('');
-  const [analysisKey, setAnalysisKey] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setDrawKey(localStorage.getItem('STUDIO_PRO_DRAW_KEY') || '');
-      setAnalysisKey(localStorage.getItem('STUDIO_PRO_ANALYSIS_KEY') || '');
+      setApiKey(localStorage.getItem('STUDIO_PRO_API_KEY') || '');
       setSaved(false);
     }
   }, [isOpen]);
 
   const handleSave = () => {
-    saveUserKeys(drawKey, analysisKey);
+    saveUserKeys(apiKey);
     setSaved(true);
     onStatusChange();
     setTimeout(() => {
@@ -34,8 +32,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
 
   const handleClear = () => {
     clearUserKeys();
-    setDrawKey('');
-    setAnalysisKey('');
+    setApiKey('');
     onStatusChange();
   };
 
@@ -43,14 +40,17 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300">
-      <div className="w-full max-w-2xl bg-[#0f172a] border border-white/20 rounded-[40px] overflow-hidden shadow-[0_0_120px_rgba(59,130,246,0.25)] ring-1 ring-white/10">
+      <div className="w-full max-w-xl bg-[#0f172a] border border-white/20 rounded-[40px] overflow-hidden shadow-[0_0_120px_rgba(59,130,246,0.25)] ring-1 ring-white/10">
         <div className="p-10 md:p-12 space-y-10">
           <div className="flex items-center justify-between border-b border-white/5 pb-8">
             <div className="flex items-center gap-5">
               <div className="p-4 bg-blue-500/20 rounded-2xl shadow-inner ring-1 ring-blue-500/30">
-                <Settings className="w-8 h-8 text-blue-400" />
+                <Zap className="w-8 h-8 text-blue-400" />
               </div>
-              <h2 className="text-3xl font-black text-white tracking-tight">API 配置管理</h2>
+              <div>
+                <h2 className="text-3xl font-black text-white tracking-tight">API 配置管理</h2>
+                <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Unified Apimart Gateway</p>
+              </div>
             </div>
             <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-full transition-all text-slate-400 hover:text-white group">
               <X className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
@@ -60,35 +60,26 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
           <div className="space-y-8">
             <div className="space-y-4">
               <label className="text-sm font-black text-blue-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
-                <Key className="w-5 h-5" /> 绘图密钥 (DRAW API KEY)
+                <Key className="w-5 h-5" /> Apimart 智造密钥 (MASTER API KEY)
               </label>
               <input 
                 type="password" 
-                value={drawKey}
-                onChange={(e) => setDrawKey(e.target.value)}
-                placeholder={drawKey ? "●●●●●●●●●●●●●●●●●●●●" : "请输入绘图服务密钥 sk-..."}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={apiKey ? "●●●●●●●●●●●●●●●●●●●●" : "请输入服务密钥 sk-..."}
                 className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-6 py-5 text-lg text-white focus:outline-none focus:ring-4 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all placeholder:text-slate-600 shadow-inner"
               />
-            </div>
-
-            <div className="space-y-4">
-              <label className="text-sm font-black text-indigo-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
-                <ShieldCheck className="w-5 h-5" /> 分析密钥 (ANALYSIS API KEY)
-              </label>
-              <input 
-                type="password" 
-                value={analysisKey}
-                onChange={(e) => setAnalysisKey(e.target.value)}
-                placeholder={analysisKey ? "●●●●●●●●●●●●●●●●●●●●" : "请输入分析服务密钥 sk-..."}
-                className="w-full bg-slate-900/90 border border-white/10 rounded-2xl px-6 py-5 text-lg text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all placeholder:text-slate-600 shadow-inner"
-              />
+              <div className="flex items-center gap-2 px-2">
+                 <Globe className="w-3 h-3 text-emerald-500" />
+                 <span className="text-[10px] text-slate-400 font-bold uppercase">一个密钥即可解锁分析、绘图、视频全站功能</span>
+              </div>
             </div>
           </div>
 
           <div className="bg-blue-500/5 border border-blue-500/20 p-6 rounded-[24px] shadow-inner">
             <div className="flex gap-4">
                 <div className="text-2xl">🔐</div>
-                <p className="text-sm md:text-base text-blue-100/90 leading-relaxed font-medium">
+                <p className="text-sm text-blue-100/90 leading-relaxed font-medium">
                     <span className="text-blue-300 font-black">本地存储安全协议：</span><br/>
                     密钥仅保存在您的浏览器（LocalStorage）中，绝不经过中转服务器，<br/>
                     确保您的 API 资产完全私有化且数据传输链路最短。
@@ -121,12 +112,11 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
 
 const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct') => void }> = ({ onSelect }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [hasCustomKeys, setHasCustomKeys] = useState(false);
+  const [hasCustomKey, setHasCustomKey] = useState(false);
 
   const checkKeys = () => {
-    const dk = localStorage.getItem('STUDIO_PRO_DRAW_KEY');
-    const ak = localStorage.getItem('STUDIO_PRO_ANALYSIS_KEY');
-    setHasCustomKeys(!!(dk && ak));
+    const ak = localStorage.getItem('STUDIO_PRO_API_KEY');
+    setHasCustomKey(!!ak);
   };
 
   useEffect(() => {
@@ -134,7 +124,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
   }, []);
 
   const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct') => {
-    if (!hasCustomKeys) {
+    if (!hasCustomKey) {
         setIsSettingsOpen(true);
         return;
     }
@@ -144,7 +134,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col relative overflow-x-hidden">
       <div className="fixed top-8 right-8 z-50 flex items-center gap-4">
-        {!hasCustomKeys && (
+        {!hasCustomKey && (
             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-full animate-in slide-in-from-right-4 duration-500">
                 <AlertTriangle className="w-4 h-4 text-red-500" />
                 <span className="text-xs font-black text-red-500 uppercase tracking-widest">请配置密钥解锁功能</span>
@@ -152,11 +142,11 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
         )}
         <button 
             onClick={() => setIsSettingsOpen(true)}
-            className={`p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-slate-300 hover:text-white transition-all group active:scale-90 relative ${!hasCustomKeys ? 'animate-breathe shadow-[0_0_30px_rgba(59,130,246,0.3)]' : ''}`}
+            className={`p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-slate-300 hover:text-white transition-all group active:scale-90 relative ${!hasCustomKey ? 'animate-breathe shadow-[0_0_30px_rgba(59,130,246,0.3)]' : ''}`}
             title="点击配置 API 密钥"
         >
-            <Settings className={`w-7 h-7 group-hover:rotate-90 transition-transform duration-500 ${!hasCustomKeys ? 'text-blue-400' : ''}`} />
-            {!hasCustomKeys && (
+            <Settings className={`w-7 h-7 group-hover:rotate-90 transition-transform duration-500 ${!hasCustomKey ? 'text-blue-400' : ''}`} />
+            {!hasCustomKey && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 border-2 border-slate-950 rounded-full shadow-lg shadow-blue-500/50"></div>
             )}
         </button>
@@ -177,7 +167,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
           </h1>
           <p className="text-slate-400 text-xl md:text-2xl max-w-3xl mx-auto font-medium leading-relaxed opacity-80">
             赋能每一位电商人的 AI 全能级视觉工作站。<br/>
-            集策略策划、3D 姿态重塑与规模化裂变于一体的旗舰生产力工具集。
+            集策略策划、3D 姿态重塑与规模化裂变于一体的旗舰生产力 toolset。
           </p>
 
           <div className="flex justify-center pt-8">
@@ -195,17 +185,20 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
-          <button onClick={() => handleCardClick('pro')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-blue-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-blue-600/10 transition-colors"></div>
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-blue-600/10 border-blue-600/20 group-hover:bg-blue-600 group-hover:text-white text-blue-400 transition-all duration-700 mb-8 shadow-xl">
-              <Move3d className="w-10 h-10" />
+          <button onClick={() => handleCardClick('pro')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-cyan-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-cyan-600/10 transition-colors"></div>
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-cyan-600/10 border-cyan-600/20 group-hover:bg-cyan-600 group-hover:text-white text-cyan-400 transition-all duration-700 mb-8 shadow-xl">
+              <Camera className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">智拍大师 Pro</h2>
+            <div className="flex items-center gap-2 mb-6">
+                <h2 className="text-3xl font-black text-white tracking-tight">智拍大师 Pro</h2>
+                <span className="bg-cyan-500 text-[10px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">旗舰版</span>
+            </div>
             <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
-              定义 3D 视觉新标准。通过高精度姿态控制与影棚布光引擎，重塑商业人像生命力。
+              深度 3D 动力学引擎。支持骨骼级姿态重塑、虚拟布光、身材管理与资产级智能换装。
             </p>
-            <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-blue-400 group-hover:gap-6 transition-all">
-              进入工作台 <ArrowRight className="w-4 h-4" />
+            <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-cyan-400 group-hover:gap-6 transition-all">
+              进入工作站 <ArrowRight className="w-4 h-4" />
             </div>
           </button>
 
@@ -321,26 +314,37 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
 const App: React.FC = () => {
   const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct'>('launcher');
 
-  const BackButton = ({ colorClass }: { colorClass: string }) => (
-    <button 
-      onClick={() => setView('launcher')}
-      className={`fixed bottom-10 left-10 z-[60] px-8 py-4 bg-slate-950/90 backdrop-blur-xl border border-white/10 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:${colorClass} hover:scale-105 transition-all active:scale-95 group flex items-center gap-3`}
-    >
-      <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
-      返回大厅
-    </button>
+  const renderView = () => {
+    switch (view) {
+      case 'pro': return <ProStudioApp />;
+      case 'batch': return <BatchMasterApp />;
+      case 'poster': return <App3PosterApp />;
+      case 'ecom': return <App4EcomApp />;
+      case 'refine': return <App5RefineApp />;
+      case 'lumi': return <App6LumiFluxApp />;
+      case 'presets': return <App7PresetHub />;
+      case 'correct': return <App8CorrectApp />;
+      default: return <Launcher onSelect={setView} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#020617] relative">
+      {view !== 'launcher' && (
+        <button 
+          onClick={() => setView('launcher')}
+          className="fixed bottom-10 right-10 z-[9999] flex items-center gap-3 px-6 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-[0_20px_50px_rgba(59,130,246,0.5)] border border-blue-400/30 transition-all duration-300 hover:scale-110 active:scale-95 group"
+        >
+          <Home className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+          <span className="font-black text-sm uppercase tracking-widest">返回大厅</span>
+        </button>
+      )}
+      
+      <div className="relative z-10">
+        {renderView()}
+      </div>
+    </div>
   );
-
-  if (view === 'pro') return (<div className="relative"><ProStudioApp /><BackButton colorClass="bg-blue-600" /></div>);
-  if (view === 'batch') return (<div className="relative"><BatchMasterApp /><BackButton colorClass="bg-purple-600" /></div>);
-  if (view === 'poster') return (<div className="relative"><App3PosterApp /><BackButton colorClass="bg-indigo-600" /></div>);
-  if (view === 'ecom') return (<div className="relative"><App4EcomApp /><BackButton colorClass="bg-emerald-600" /></div>);
-  if (view === 'refine') return (<div className="relative"><App5RefineApp /><BackButton colorClass="bg-blue-400" /></div>);
-  if (view === 'lumi') return (<div className="relative"><App6LumiFluxApp /><BackButton colorClass="bg-cyan-600" /></div>);
-  if (view === 'presets') return (<div className="relative"><App7PresetHub /><BackButton colorClass="bg-violet-600" /></div>);
-  if (view === 'correct') return (<div className="relative"><App8CorrectApp /><BackButton colorClass="bg-blue-700" /></div>);
-
-  return <Launcher onSelect={setView} />;
 };
 
 export default App;
