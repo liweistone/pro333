@@ -15,18 +15,15 @@ type PagesFunction<Env = any> = (context: {
 
 /**
  * Cloudflare Pages 后端代理：对接 D1 数据库
- * 路径: /api/presets
  */
 export const onRequest: PagesFunction<{ DB: D1Database }> = async (context) => {
   const { env, request } = context;
-  
-  // 核心修复：截图显示变量名为 DB
   const db = env.DB;
   
   if (!db) {
     return new Response(JSON.stringify({ 
       success: false, 
-      error: "D1 绑定失败：请检查 Pages 设置中变量名是否为 DB" 
+      error: "D1 BINDING_NOT_FOUND: 请确保 Pages 设置中变量名为 DB 且已重新部署项目。" 
     }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
   
@@ -36,17 +33,15 @@ export const onRequest: PagesFunction<{ DB: D1Database }> = async (context) => {
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
 
   try {
-    // 基础查询：根据截图表名为 presets
+    // 检查表是否存在并执行查询
     let sql = "SELECT * FROM presets WHERE visibility = 'public'";
     const params: any[] = [];
 
-    // 分类逻辑：针对 category_id 字段
     if (category !== '全部') {
       sql += " AND category_id = ?";
       params.push(category);
     }
 
-    // 搜索逻辑
     if (query) {
       sql += " AND (title LIKE ? OR positive LIKE ?)";
       const lq = `%${query}%`;
@@ -58,18 +53,20 @@ export const onRequest: PagesFunction<{ DB: D1Database }> = async (context) => {
 
     const { results } = await db.prepare(sql).bind(...params).all();
 
-    return new Response(JSON.stringify(results), {
+    return new Response(JSON.stringify(results || []), {
       headers: { 
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, max-age=10" 
+        "Cache-Control": "no-cache" 
       },
     });
   } catch (error: any) {
+    // 针对表不存在的情况提供友好提示
+    const isTableMissing = error.message.includes("no such table");
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message,
-      stack: "SQL Execution Error"
+      error: isTableMissing ? "数据库表 presets 尚未创建" : error.message,
+      debug_hint: "请在 D1 控制台执行相应的 SQL 建表脚本"
     }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
