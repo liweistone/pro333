@@ -17,7 +17,7 @@ import {
   Clock
 } from 'lucide-react';
 
-// 生产环境基础 URL
+// 核心生产环境地址
 const BASE_PROD_URL = 'https://aideator.top';
 
 const App8PortalApp: React.FC = () => {
@@ -30,12 +30,13 @@ const App8PortalApp: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // 辅助函数：获取完整的 API 地址
+    // 辅助函数：根据当前环境智能路由 API 请求
     const getApiUrl = (endpoint: string) => {
+        const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         if (window.location.hostname === 'localhost' || !window.location.hostname.includes('aideator.top')) {
-            return `${BASE_PROD_URL}${endpoint}`;
+            return `${BASE_PROD_URL}${cleanEndpoint}`;
         }
-        return endpoint;
+        return cleanEndpoint;
     };
 
     useEffect(() => {
@@ -114,11 +115,13 @@ const App8PortalApp: React.FC = () => {
         setUser(null);
     };
 
+    // 核心修复：确保图像 URL 始终带上正确的生产环境前缀
     const getImageUrl = (path: string | null) => {
         if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
         if (path.startsWith('http')) return path;
-        // 核心修复：直接通过核心节点地址请求图像
-        return `${BASE_PROD_URL}/api/images/public/${path}`;
+        
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        return `${BASE_PROD_URL}/api/images/public/${cleanPath}`;
     };
 
     if (!isLoggedIn) {
@@ -227,7 +230,7 @@ const App8PortalApp: React.FC = () => {
                         <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
                             <header className="space-y-4">
                                 <h2 className="text-6xl font-black tracking-tighter">下午好, {user?.username} 👋</h2>
-                                <p className="text-slate-400 text-xl font-medium max-w-2xl">欢迎访问您的数字资产门户。所有 D1/R2 数据已实时同步。</p>
+                                <p className="text-slate-400 text-xl font-medium max-w-2xl">欢迎访问您的数字资产门户。所有云端 R2 图片已自动映射到核心节点。</p>
                             </header>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

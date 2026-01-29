@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Preset } from './types';
 
-// 生产环境基础 URL
+// 核心生产环境地址
 const BASE_PROD_URL = 'https://aideator.top';
 
 const App7PresetHub: React.FC = () => {
@@ -31,13 +31,14 @@ const App7PresetHub: React.FC = () => {
   const [hasError, setHasError] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // 辅助函数：获取完整的 API 地址
+  // 辅助函数：根据当前环境智能路由 API 请求
   const getApiUrl = (endpoint: string) => {
-    // 优先尝试本地，如果是在非生产域名下运行，则直接指向生产服务器
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    // 如果不在生产主域名下，强制使用绝对路径
     if (window.location.hostname === 'localhost' || !window.location.hostname.includes('aideator.top')) {
-        return `${BASE_PROD_URL}${endpoint}`;
+        return `${BASE_PROD_URL}${cleanEndpoint}`;
     }
-    return endpoint;
+    return cleanEndpoint;
   };
 
   // 初始化加载分类与数据
@@ -49,8 +50,8 @@ const App7PresetHub: React.FC = () => {
             if (catRes.ok) setCategories(await catRes.json());
             await loadData();
         } catch (e) {
-            console.warn("Categories fetch failed, using defaults");
-            await loadData(); // 尝试加载数据
+            console.warn("Categories fetch failed, using fallback sync");
+            await loadData();
         } finally {
             setLoading(false);
         }
@@ -74,7 +75,6 @@ const App7PresetHub: React.FC = () => {
       const res = await fetch(getApiUrl(endpoint));
       if (res.ok) {
           const data = await res.json();
-          // 处理不同的响应结构
           const list = Array.isArray(data) ? data : (data.results || data.data || []);
           setPresets(list);
       } else {
@@ -90,16 +90,18 @@ const App7PresetHub: React.FC = () => {
   const handleCopyPrompt = (preset: Preset) => {
     navigator.clipboard.writeText(preset.positive);
     setCopiedId(preset.id);
-    // 记录使用量
     fetch(getApiUrl(`/api/presets/${preset.id}/use`), { method: 'POST' }).catch(() => {});
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // 核心修复：确保图像 URL 始终带上正确的生产环境前缀
   const getImageUrl = (path: string | null) => {
     if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
     if (path.startsWith('http')) return path;
-    // 修复：始终使用生产环境的图片代理地址，确保图像能显示
-    return `${BASE_PROD_URL}/api/images/public/${path}`;
+    
+    // 清洗路径，防止出现 // 
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return `${BASE_PROD_URL}/api/images/public/${cleanPath}`;
   };
 
   const formatDate = (timestamp: number) => {
@@ -204,7 +206,7 @@ const App7PresetHub: React.FC = () => {
                </div>
                <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Sync Connection Lost</h2>
                <p className="text-slate-500 text-sm mt-6 max-w-sm leading-relaxed font-medium uppercase tracking-widest">
-                 数据库连接中断或本地代理未配置。系统将自动尝试通过核心节点 {BASE_PROD_URL} 重连。
+                 数据库连接中断。系统将自动尝试通过核心节点 {BASE_PROD_URL} 重连并重定向资源路径。
                </p>
                <button onClick={loadData} className="mt-10 px-12 py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-xl">Re-establish Sync</button>
             </div>
@@ -219,7 +221,15 @@ const App7PresetHub: React.FC = () => {
               {presets.map(preset => (
                 <div key={preset.id} className="group bg-slate-900/60 border border-white/5 rounded-[40px] overflow-hidden hover:border-indigo-500/40 transition-all duration-700 flex flex-col shadow-2xl hover:-translate-y-3">
                   <div className="relative aspect-[4/5] bg-black overflow-hidden border-b border-white/5">
-                    <img src={getImageUrl(preset.image)} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-[1500ms]" loading="lazy" />
+                    <img 
+                      src={getImageUrl(preset.image)} 
+                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-[1500ms]" 
+                      loading="lazy" 
+                      onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
+                      }}
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
                     
                     <div className="absolute top-6 left-6">
