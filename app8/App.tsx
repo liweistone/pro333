@@ -17,7 +17,7 @@ import {
   Clock
 } from 'lucide-react';
 
-// 核心生产环境地址
+// 核心生产环境基础 URL
 const BASE_PROD_URL = 'https://aideator.top';
 
 const App8PortalApp: React.FC = () => {
@@ -30,13 +30,25 @@ const App8PortalApp: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // 辅助函数：根据当前环境智能路由 API 请求
+    // 辅助函数：构造完整的 API 地址
     const getApiUrl = (endpoint: string) => {
         const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-        if (window.location.hostname === 'localhost' || !window.location.hostname.includes('aideator.top')) {
-            return `${BASE_PROD_URL}${cleanEndpoint}`;
+        return `${BASE_PROD_URL}${cleanEndpoint}`;
+    };
+
+    // 核心修复：构造正确的图像 URL
+    const getImageUrl = (path: string | null) => {
+        if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
+        if (path.startsWith('http')) return path;
+        
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        
+        // 关键逻辑：防止重复拼接
+        if (normalizedPath.startsWith('/api/images/public/')) {
+            return `${BASE_PROD_URL}${normalizedPath}`;
         }
-        return cleanEndpoint;
+        
+        return `${BASE_PROD_URL}/api/images/public${normalizedPath}`;
     };
 
     useEffect(() => {
@@ -73,7 +85,8 @@ const App8PortalApp: React.FC = () => {
             const pData = await presetRes.json();
             const aData = await articleRes.json();
             
-            const finalPresets = Array.isArray(pData) ? pData : (pData.results || pData.data || []);
+            // 兼容开发文档中的多种数据结构
+            const finalPresets = Array.isArray(pData) ? pData : (pData.presets || pData.results || pData.data || []);
             const finalArticles = Array.isArray(aData) ? aData : (aData.results || aData.data || []);
             
             setPresets(finalPresets);
@@ -113,15 +126,6 @@ const App8PortalApp: React.FC = () => {
         localStorage.removeItem('token');
         setIsLoggedIn(false);
         setUser(null);
-    };
-
-    // 核心修复：确保图像 URL 始终带上正确的生产环境前缀
-    const getImageUrl = (path: string | null) => {
-        if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
-        if (path.startsWith('http')) return path;
-        
-        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-        return `${BASE_PROD_URL}/api/images/public/${cleanPath}`;
     };
 
     if (!isLoggedIn) {
@@ -201,7 +205,6 @@ const App8PortalApp: React.FC = () => {
                                 <item.icon className="w-5 h-5" />
                                 <span className="font-black text-xs uppercase tracking-widest">{item.label}</span>
                             </div>
-                            {activeTab === item.id && <ChevronRight className="w-3 h-3 opacity-50" />}
                         </button>
                     ))}
                 </nav>
@@ -230,7 +233,7 @@ const App8PortalApp: React.FC = () => {
                         <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
                             <header className="space-y-4">
                                 <h2 className="text-6xl font-black tracking-tighter">下午好, {user?.username} 👋</h2>
-                                <p className="text-slate-400 text-xl font-medium max-w-2xl">欢迎访问您的数字资产门户。所有云端 R2 图片已自动映射到核心节点。</p>
+                                <p className="text-slate-400 text-xl font-medium max-w-2xl">欢迎访问您的数字资产门户。所有 R2 图片已自动映射到核心节点。</p>
                             </header>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -262,7 +265,6 @@ const App8PortalApp: React.FC = () => {
                                       <h3 className="text-3xl font-black tracking-tight flex items-center gap-3">
                                         最新预设资产
                                       </h3>
-                                      <p className="text-sm text-slate-500 font-medium mt-1 uppercase tracking-widest">Recently Synced from D1/Presets</p>
                                     </div>
                                     <button onClick={() => setActiveTab('presets')} className="group flex items-center gap-3 px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all">
                                         查看全部库 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -298,7 +300,6 @@ const App8PortalApp: React.FC = () => {
                              <header className="flex justify-between items-end pb-8 border-b border-white/5">
                                 <div>
                                   <h2 className="text-5xl font-black tracking-tighter">预设工坊</h2>
-                                  <p className="text-slate-400 text-lg mt-2">D1 数据库托管的高保真提示词资产。</p>
                                 </div>
                                 <div className="relative group">
                                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-indigo-400 transition-colors" />
@@ -317,9 +318,6 @@ const App8PortalApp: React.FC = () => {
                                             />
                                         </div>
                                         <h4 className="font-black text-slate-100 truncate text-lg">{p.title}</h4>
-                                        <p className="text-[10px] text-slate-500 mt-3 flex-1 line-clamp-3 leading-relaxed font-medium italic">
-                                            {p.description || '高质量商业绘图指令集。'}
-                                        </p>
                                         <button className="mt-6 w-full bg-white/5 hover:bg-indigo-600 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-3">
                                             <Zap className="w-4 h-4 fill-white" /> 应用预设
                                         </button>
@@ -333,7 +331,6 @@ const App8PortalApp: React.FC = () => {
                         <div className="space-y-12 animate-in fade-in duration-500">
                              <header>
                                   <h2 className="text-5xl font-black tracking-tighter">创作学院</h2>
-                                  <p className="text-slate-400 text-lg mt-2">AI 视觉实战方法论。</p>
                              </header>
 
                              <div className="grid gap-8">
@@ -348,15 +345,10 @@ const App8PortalApp: React.FC = () => {
                                         </div>
                                         <div className="flex-1 flex flex-col py-2">
                                             <h4 className="text-3xl font-black tracking-tight group-hover:text-indigo-400 transition-colors leading-tight mb-4">{a.title}</h4>
-                                            <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed font-medium mb-8 flex-1">{a.content?.replace(/<[^>]*>/g, '')}</p>
-                                            
                                             <div className="flex items-center justify-between pt-6 border-t border-white/5">
                                                 <div className="flex items-center gap-8">
                                                     <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                                                         <User className="w-4 h-4 text-indigo-500" /> {a.author_name}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                                        <Eye className="w-4 h-4 text-indigo-500" /> {a.view_count} 阅览
                                                     </div>
                                                 </div>
                                                 <span className="text-[10px] font-black text-indigo-400 group-hover:gap-3 flex items-center gap-2 transition-all uppercase tracking-widest">阅读全文 <ArrowRight className="w-4 h-4" /></span>

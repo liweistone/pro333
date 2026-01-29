@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Preset } from './types';
 
-// 核心生产环境地址
+// 生产环境基础 URL
 const BASE_PROD_URL = 'https://aideator.top';
 
 const App7PresetHub: React.FC = () => {
@@ -31,14 +31,27 @@ const App7PresetHub: React.FC = () => {
   const [hasError, setHasError] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // 辅助函数：根据当前环境智能路由 API 请求
+  // 辅助函数：根据开发文档构造 API 地址
   const getApiUrl = (endpoint: string) => {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    // 如果不在生产主域名下，强制使用绝对路径
-    if (window.location.hostname === 'localhost' || !window.location.hostname.includes('aideator.top')) {
-        return `${BASE_PROD_URL}${cleanEndpoint}`;
+    return `${BASE_PROD_URL}${cleanEndpoint}`;
+  };
+
+  // 核心修复：根据截图显示的正确路径逻辑构造图像 URL
+  const getImageUrl = (path: string | null) => {
+    if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
+    if (path.startsWith('http')) return path;
+    
+    // 标准化路径，确保以 / 开头
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    
+    // 如果数据库返回的数据已经包含了 /api/images/public/ 前缀（如截图所示）
+    if (normalizedPath.startsWith('/api/images/public/')) {
+        return `${BASE_PROD_URL}${normalizedPath}`;
     }
-    return cleanEndpoint;
+    
+    // 如果只是纯文件名，则手动补全完整路径
+    return `${BASE_PROD_URL}/api/images/public${normalizedPath}`;
   };
 
   // 初始化加载分类与数据
@@ -50,7 +63,7 @@ const App7PresetHub: React.FC = () => {
             if (catRes.ok) setCategories(await catRes.json());
             await loadData();
         } catch (e) {
-            console.warn("Categories fetch failed, using fallback sync");
+            console.warn("Categories sync failed, retrying data load...");
             await loadData();
         } finally {
             setLoading(false);
@@ -75,7 +88,8 @@ const App7PresetHub: React.FC = () => {
       const res = await fetch(getApiUrl(endpoint));
       if (res.ok) {
           const data = await res.json();
-          const list = Array.isArray(data) ? data : (data.results || data.data || []);
+          // 适配文档中提到的多种数据结构
+          const list = Array.isArray(data) ? data : (data.presets || data.results || data.data || []);
           setPresets(list);
       } else {
           setHasError(true);
@@ -92,16 +106,6 @@ const App7PresetHub: React.FC = () => {
     setCopiedId(preset.id);
     fetch(getApiUrl(`/api/presets/${preset.id}/use`), { method: 'POST' }).catch(() => {});
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  // 核心修复：确保图像 URL 始终带上正确的生产环境前缀
-  const getImageUrl = (path: string | null) => {
-    if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
-    if (path.startsWith('http')) return path;
-    
-    // 清洗路径，防止出现 // 
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return `${BASE_PROD_URL}/api/images/public/${cleanPath}`;
   };
 
   const formatDate = (timestamp: number) => {
@@ -171,20 +175,6 @@ const App7PresetHub: React.FC = () => {
               ))}
             </nav>
           </div>
-
-          <div className="bg-gradient-to-br from-indigo-500/5 to-purple-500/5 p-8 rounded-[40px] border border-white/5">
-             <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-6 border-b border-indigo-500/10 pb-4">Live Statistics</h3>
-             <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                   <span className="text-[10px] text-slate-500 font-black uppercase">资产总计</span>
-                   <span className="text-sm font-black text-indigo-100 tabular-nums">{presets.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                   <span className="text-[10px] text-slate-500 font-black uppercase">同步负载</span>
-                   <span className="text-sm font-black text-emerald-400 italic">Excellent</span>
-                </div>
-             </div>
-          </div>
         </aside>
 
         <main className="flex-1 p-12 overflow-y-auto custom-scrollbar bg-[#02040a]">
@@ -198,17 +188,6 @@ const App7PresetHub: React.FC = () => {
                   <span className="text-sm font-black uppercase tracking-[0.5em] text-indigo-400 block">Retrieving D1 Records</span>
                   <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">正在安全对接云端数据网关...</span>
                </div>
-            </div>
-          ) : (hasError && presets.length === 0) ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-12">
-               <div className="w-24 h-24 bg-rose-500/10 rounded-[40px] flex items-center justify-center mb-10 border border-rose-500/20 shadow-2xl">
-                  <ServerOff className="w-12 h-12 text-rose-500" />
-               </div>
-               <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Sync Connection Lost</h2>
-               <p className="text-slate-500 text-sm mt-6 max-w-sm leading-relaxed font-medium uppercase tracking-widest">
-                 数据库连接中断。系统将自动尝试通过核心节点 {BASE_PROD_URL} 重连并重定向资源路径。
-               </p>
-               <button onClick={loadData} className="mt-10 px-12 py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-xl">Re-establish Sync</button>
             </div>
           ) : presets.length === 0 ? (
              <div className="h-full flex flex-col items-center justify-center text-slate-800 space-y-6">
@@ -231,24 +210,11 @@ const App7PresetHub: React.FC = () => {
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
-                    
-                    <div className="absolute top-6 left-6">
-                       <span className="px-4 py-2 bg-indigo-600/90 backdrop-blur-xl rounded-2xl text-[9px] font-black text-white uppercase tracking-widest border border-white/10 shadow-2xl">
-                          {preset.preset_type || 'ELITE'}
-                       </span>
-                    </div>
-
-                    <div className="absolute top-6 right-6 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-xl rounded-xl text-[9px] font-bold text-slate-300 border border-white/5 shadow-lg">
-                       <Clock className="w-3.5 h-3.5 text-indigo-400" /> {formatDate(preset.created_at)}
-                    </div>
                   </div>
 
                   <div className="p-10 flex-1 flex flex-col gap-8">
                     <div className="space-y-3">
                       <h3 className="text-xl font-black text-white group-hover:text-indigo-400 transition-colors truncate tracking-tight" title={preset.title}>{preset.title}</h3>
-                      <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2 font-medium">
-                        {preset.description || "该高保真资产由视觉专家进行 DNA 锁定，包含完整物理材质与环境渲染逻辑。"}
-                      </p>
                     </div>
 
                     <div className="mt-auto space-y-8">
@@ -269,14 +235,7 @@ const App7PresetHub: React.FC = () => {
                              <div className="flex flex-col gap-2 items-center" title="收藏量"><Heart className="w-4 h-4 text-rose-400/60" /><span className="text-[10px] text-slate-500 font-black tabular-nums">{preset.favorite_count || 0}</span></div>
                              <div className="flex flex-col gap-2 items-center" title="生成次数"><MousePointer2 className="w-4 h-4 text-emerald-400/60" /><span className="text-[10px] text-slate-500 font-black tabular-nums">{preset.use_count || 0}</span></div>
                           </div>
-                          <button className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all shadow-inner">
-                             <ArrowUpRight className="w-5 h-5" />
-                          </button>
                        </div>
-
-                       <button className="w-full py-5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-[24px] text-[11px] font-black shadow-[0_20px_40px_rgba(79,70,229,0.2)] transition-all active:scale-95 flex items-center justify-center gap-4 uppercase tracking-widest">
-                         Sync to AI Lab <Zap className="w-4 h-4" fill="white" />
-                       </button>
                     </div>
                   </div>
                 </div>
