@@ -1,5 +1,5 @@
 
-import { API_CONFIG } from "@/apiConfig";
+import { API_CONFIG } from "../../apiConfig";
 
 export interface AnalysisCategory {
   title: string;

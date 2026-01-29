@@ -168,12 +168,12 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
       <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] bg-blue-600/15 blur-[150px] rounded-full"></div>
       <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 blur-[150px] rounded-full"></div>
 
-      <div className="max-w-7xl mx-auto w-full z-10 px-6 py-24 md:py-32 space-y-24 animate-in fade-in zoom-in-95 duration-1000 text-center">
+      <div className="max-w-7xl mx-auto w-full z-10 px-6 py-24 md:py-32 space-y-24 animate-in fade-in zoom-in-95 duration-1000 text-center text-white">
         <div className="space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-[0.4em] mb-4">
             <Sparkles className="w-4 h-4" /> 专业视觉智造生态系统
           </div>
-          <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter leading-none">
+          <h1 className="text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-none">
             智拍全能王 <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">Pro</span>
           </h1>
           <p className="text-slate-400 text-xl md:text-2xl max-w-3xl mx-auto font-medium leading-relaxed opacity-80">
@@ -202,7 +202,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-blue-600/10 border-blue-600/20 group-hover:bg-blue-600 group-hover:text-white text-blue-400 transition-all duration-700 mb-6 shadow-xl">
               <LayoutDashboard className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-4 tracking-tight text-blue-400">创作资产门户</h2>
+            <h2 className="text-2xl font-black mb-4 tracking-tight text-blue-400">创作资产门户</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-10 font-medium h-20 overflow-hidden line-clamp-4">
               统一准入管理中心。集成用户鉴权、个人资产看板、预设库及 AI 创作学院，为您提供一站式创作托管服务。
             </p>
@@ -214,10 +214,10 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
           {/* app7: 全域预设中心 */}
           <button onClick={() => handleCardClick('presets')} className="group relative flex flex-col text-left p-8 rounded-[40px] bg-slate-900/40 border border-slate-800 hover:border-indigo-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-600/5 blur-[60px] -mr-24 -mt-24 group-hover:bg-indigo-600/10 transition-colors"></div>
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-indigo-600/10 border-indigo-600/20 group-hover:bg-indigo-600 group-hover:text-white text-indigo-400 transition-all duration-700 mb-6 shadow-xl">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-indigo-100/10 border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white text-indigo-400 transition-all duration-700 mb-6 shadow-xl">
               <Database className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-4 tracking-tight text-indigo-400">预设共享中心</h2>
+            <h2 className="text-2xl font-black mb-4 tracking-tight text-indigo-400">预设共享中心</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-10 font-medium h-20 overflow-hidden line-clamp-4">
               全平台资产大脑。通过 Cloudflare D1/R2 实时同步“大海捞针”等项目的精品预设，实现跨项目灵感共享与一键调用。
             </p>
@@ -232,7 +232,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-blue-600/10 border-blue-600/20 group-hover:bg-blue-600 group-hover:text-white text-blue-400 transition-all duration-700 mb-6 shadow-xl">
               <Rocket className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-4 tracking-tight text-blue-400">方案精修专家</h2>
+            <h2 className="text-2xl font-black mb-4 tracking-tight text-blue-400">方案精修专家</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-10 font-medium h-20 overflow-hidden line-clamp-4">
               创意逻辑进化器。将简单的文案草稿深度优化为专业的主图设计模版提示词，实现 4K 高清画质与品牌设计规范的精准落地。
             </p>
@@ -247,7 +247,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-cyan-600/10 border-cyan-600/20 group-hover:bg-cyan-600 group-hover:text-white text-cyan-400 transition-all duration-700 mb-6 shadow-xl">
               <Zap className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-4 tracking-tight text-cyan-400">流光智造 Pro</h2>
+            <h2 className="text-2xl font-black mb-4 tracking-tight text-cyan-400">流光智造 Pro</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-10 font-medium h-20 overflow-hidden line-clamp-4">
               智能产品光效智造系统。深度识别产品物理拓扑，一键生成带有内部组件流光特效的 4K 视觉锚点图与动态短视频。
             </p>
@@ -262,7 +262,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-blue-600/10 border-blue-600/20 group-hover:bg-blue-600 group-hover:text-white text-blue-400 transition-all duration-700 mb-6 shadow-xl">
               <Move3d className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-4 tracking-tight text-blue-400">智拍大师 Pro</h2>
+            <h2 className="text-2xl font-black mb-4 tracking-tight text-blue-400">智拍大师 Pro</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-10 font-medium h-20 overflow-hidden line-clamp-4">
               定义 3D 视觉新标准。通过高精度姿态控制，结合内置的专业摄影棚布光引擎，重塑商业人像生命力。
             </p>
@@ -277,7 +277,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-purple-600/10 border-purple-600/20 group-hover:bg-purple-600 group-hover:text-white text-purple-400 transition-all duration-700 mb-6 shadow-xl">
               <LayoutGrid className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-4 tracking-tight text-purple-400">裂变大师</h2>
+            <h2 className="text-2xl font-black mb-4 tracking-tight text-purple-400">裂变大师</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-10 font-medium h-20 overflow-hidden line-clamp-4">
               电商工业化生产引擎。利用核心视觉指纹锚定技术，一键裂变数十个专业摄影机位的主图素材。
             </p>
@@ -292,7 +292,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-indigo-100/10 border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white text-indigo-400 transition-all duration-700 mb-6 shadow-xl">
               <Palette className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-4 tracking-tight text-indigo-400">海报风格智造家</h2>
+            <h2 className="text-2xl font-black mb-4 tracking-tight text-indigo-400">海报风格智造家</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-10 font-medium h-20 overflow-hidden line-clamp-4">
               深度识别海报视觉 DNA。采用跨模态资产融合技术，完美复刻顶尖海报的布局与审美风格。
             </p>
@@ -307,7 +307,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-emerald-600/10 border-emerald-600/20 group-hover:bg-emerald-600 group-hover:text-white text-emerald-400 transition-all duration-700 mb-6 shadow-xl">
               <BrainCircuit className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-white mb-4 tracking-tight text-emerald-400">全案智造引擎</h2>
+            <h2 className="text-2xl font-black mb-4 tracking-tight text-emerald-400">全案智造引擎</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-10 font-medium h-20 overflow-hidden line-clamp-4">
               集成深度逻辑推理模型。AI 专家将深度解构产品核心卖点与市场痛点，智造高转化潜力的电商全案。
             </p>

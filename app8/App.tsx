@@ -7,13 +7,10 @@ import {
   User, 
   LogOut, 
   Brain, 
-  Lock, 
-  Loader2, 
   ChevronRight,
   ShieldCheck,
   Eye,
   Search,
-  CheckCircle2,
   Zap,
   ArrowRight,
   TrendingUp,
@@ -56,16 +53,23 @@ const App8PortalApp: React.FC = () => {
     const loadPortalData = async () => {
         setLoading(true);
         try {
+            // 对接本地代理接口
             const [presetRes, articleRes] = await Promise.all([
                 fetch('/api/presets?limit=6'),
                 fetch('/api/articles?limit=10')
             ]);
+            
             const pData = await presetRes.json();
             const aData = await articleRes.json();
-            setPresets(Array.isArray(pData) ? pData : (pData.data || []));
-            setArticles(Array.isArray(aData) ? aData : (aData.data || []));
+            
+            // 兼容 D1 results 和 data 两种返回格式
+            const finalPresets = Array.isArray(pData) ? pData : (pData.results || pData.data || []);
+            const finalArticles = Array.isArray(aData) ? aData : (aData.results || aData.data || []);
+            
+            setPresets(finalPresets);
+            setArticles(finalArticles);
         } catch (e) {
-            console.error('D1 Data load failed');
+            console.error('Data load failed');
         } finally {
             setLoading(false);
         }
@@ -86,7 +90,7 @@ const App8PortalApp: React.FC = () => {
                 localStorage.setItem('token', data.token);
                 setIsLoggedIn(true);
             } else {
-                setError(data.error || '认证失败，请检查凭据');
+                setError(data.error || '认证失败');
             }
         } catch (e) {
             setError('服务器连接异常');
@@ -101,16 +105,19 @@ const App8PortalApp: React.FC = () => {
         setUser(null);
     };
 
-    const getImageUrl = (path: string) => {
+    const getImageUrl = (path: string | null) => {
         if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
-        return path.startsWith('http') ? path : `/api/images/public/${path}`;
+        // 如果是完整 URL 直接返回
+        if (path.startsWith('http')) return path;
+        // 否则通过本地 R2 代理读取
+        return `/api/images/public/${path}`;
     };
 
     if (!isLoggedIn) {
         return (
             <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 relative overflow-hidden">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full"></div>
-                <div className="bg-slate-900/50 border border-white/10 p-10 rounded-[40px] w-full max-w-md backdrop-blur-2xl shadow-2xl animate-in zoom-in-95 duration-500 relative z-10">
+                <div className="bg-slate-900/50 border border-white/10 p-10 rounded-[40px] w-full max-w-md backdrop-blur-2xl shadow-2xl relative z-10">
                     <div className="text-center mb-10">
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
                             <Brain className="text-white w-8 h-8" />
@@ -126,7 +133,7 @@ const App8PortalApp: React.FC = () => {
                                 type="text" 
                                 className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-700"
                                 value={loginForm.username}
-                                placeholder="输入注册名"
+                                placeholder="输入用户名"
                                 onChange={e => setLoginForm({...loginForm, username: e.target.value})}
                                 required
                             />
@@ -192,7 +199,7 @@ const App8PortalApp: React.FC = () => {
                 <div className="mt-auto pt-8 border-t border-white/5">
                     <div className="flex items-center gap-4 p-4 bg-white/5 rounded-[24px] mb-4 border border-white/5">
                         <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-sm font-black border border-white/10 uppercase text-indigo-400">
-                            {user?.username?.[0]}
+                            {user?.username?.[0] || 'U'}
                         </div>
                         <div className="overflow-hidden">
                             <p className="truncate font-black text-xs">{user?.username}</p>
@@ -214,7 +221,7 @@ const App8PortalApp: React.FC = () => {
                         <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
                             <header className="space-y-4">
                                 <h2 className="text-6xl font-black tracking-tighter">下午好, {user?.username} 👋</h2>
-                                <p className="text-slate-400 text-xl font-medium max-w-2xl">欢迎访问您的智拍全能王数字资产门户。所有 D1 数据库记录已实时同步。</p>
+                                <p className="text-slate-400 text-xl font-medium max-w-2xl">欢迎访问您的数字资产门户。所有 D1/R2 数据已实时同步。</p>
                             </header>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -231,11 +238,11 @@ const App8PortalApp: React.FC = () => {
                                 <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-indigo-500/30 p-10 rounded-[48px] shadow-2xl">
                                     <h3 className="text-indigo-300 text-[10px] font-black uppercase tracking-[0.3em]">Status / 系统状态</h3>
                                     <p className="text-4xl font-black mt-8 uppercase text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 tracking-tight leading-none">
-                                      AUTHENTICATED & SYNCED
+                                      SYNCED
                                     </p>
                                     <div className="mt-6 flex items-center gap-2">
                                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Connection Stable</span>
+                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">D1/R2 Connected</span>
                                     </div>
                                 </div>
                             </div>
@@ -244,7 +251,6 @@ const App8PortalApp: React.FC = () => {
                                 <div className="flex justify-between items-end">
                                     <div>
                                       <h3 className="text-3xl font-black tracking-tight flex items-center gap-3">
-                                        <Zap className="w-6 h-6 text-indigo-500" fill="currentColor" />
                                         最新预设资产
                                       </h3>
                                       <p className="text-sm text-slate-500 font-medium mt-1 uppercase tracking-widest">Recently Synced from D1/Presets</p>
@@ -260,7 +266,11 @@ const App8PortalApp: React.FC = () => {
                                     ) : presets.slice(0, 3).map((p: any) => (
                                         <div key={p.id} className="bg-slate-900/80 border border-white/5 rounded-[2.5rem] overflow-hidden group cursor-pointer hover:border-indigo-500/30 transition-all shadow-2xl">
                                             <div className="aspect-[4/5] bg-slate-950 relative overflow-hidden">
-                                                <img src={getImageUrl(p.image)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-70" />
+                                                <img 
+                                                  src={getImageUrl(p.image)} 
+                                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-70" 
+                                                  onError={(e) => (e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400")}
+                                                />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80"></div>
                                                 <div className="absolute bottom-8 left-8 right-8 space-y-3">
                                                     <span className="bg-indigo-600 text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest inline-block shadow-lg">{p.preset_type || 'PRO'}</span>
@@ -291,11 +301,15 @@ const App8PortalApp: React.FC = () => {
                                 {presets.map((p: any) => (
                                     <div key={p.id} className="bg-slate-900 border border-white/5 rounded-[2rem] p-6 flex flex-col group hover:border-indigo-500/40 transition-all shadow-xl hover:-translate-y-2">
                                         <div className="aspect-square rounded-2xl bg-slate-950 mb-6 overflow-hidden relative border border-white/5 shadow-inner">
-                                            <img src={getImageUrl(p.image)} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+                                            <img 
+                                              src={getImageUrl(p.image)} 
+                                              className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500" 
+                                              onError={(e) => (e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400")}
+                                            />
                                         </div>
                                         <h4 className="font-black text-slate-100 truncate text-lg">{p.title}</h4>
                                         <p className="text-[10px] text-slate-500 mt-3 flex-1 line-clamp-3 leading-relaxed font-medium italic">
-                                            {p.description || '由智拍 AI 实验室调优的高质量商业绘图指令集。'}
+                                            {p.description || '高质量商业绘图指令集。'}
                                         </p>
                                         <button className="mt-6 w-full bg-white/5 hover:bg-indigo-600 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-3">
                                             <Zap className="w-4 h-4 fill-white" /> 应用预设
@@ -310,22 +324,22 @@ const App8PortalApp: React.FC = () => {
                         <div className="space-y-12 animate-in fade-in duration-500">
                              <header>
                                   <h2 className="text-5xl font-black tracking-tighter">创作学院</h2>
-                                  <p className="text-slate-400 text-lg mt-2">赋能每一位电商人的 AI 视觉实战方法论。</p>
+                                  <p className="text-slate-400 text-lg mt-2">AI 视觉实战方法论。</p>
                              </header>
 
                              <div className="grid gap-8">
                                 {articles.map((a: any) => (
                                     <div key={a.id} className="bg-slate-900/40 border border-white/5 p-8 rounded-[40px] flex flex-col md:flex-row gap-10 hover:bg-white/5 transition-all group cursor-pointer">
                                         <div className="md:w-80 h-52 rounded-3xl bg-slate-950 flex-shrink-0 overflow-hidden relative border border-white/5">
-                                            <img src={getImageUrl(a.cover_image)} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" />
-                                            <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[8px] font-black text-indigo-400 uppercase tracking-widest">Course</div>
+                                            <img 
+                                              src={getImageUrl(a.cover_image)} 
+                                              className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" 
+                                              onError={(e) => (e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400")}
+                                            />
                                         </div>
                                         <div className="flex-1 flex flex-col py-2">
-                                            <div className="flex items-center gap-4 text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-4">
-                                                <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> Recently Published</span>
-                                            </div>
                                             <h4 className="text-3xl font-black tracking-tight group-hover:text-indigo-400 transition-colors leading-tight mb-4">{a.title}</h4>
-                                            <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed font-medium mb-8 flex-1">{a.content.replace(/<[^>]*>/g, '')}</p>
+                                            <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed font-medium mb-8 flex-1">{a.content?.replace(/<[^>]*>/g, '')}</p>
                                             
                                             <div className="flex items-center justify-between pt-6 border-t border-white/5">
                                                 <div className="flex items-center gap-8">
@@ -336,7 +350,7 @@ const App8PortalApp: React.FC = () => {
                                                         <Eye className="w-4 h-4 text-indigo-500" /> {a.view_count} 阅览
                                                     </div>
                                                 </div>
-                                                <span className="text-[10px] font-black text-indigo-400 group-hover:gap-3 flex items-center gap-2 transition-all">READ COURSE <ArrowRight className="w-4 h-4" /></span>
+                                                <span className="text-[10px] font-black text-indigo-400 group-hover:gap-3 flex items-center gap-2 transition-all uppercase tracking-widest">阅读全文 <ArrowRight className="w-4 h-4" /></span>
                                             </div>
                                         </div>
                                     </div>
