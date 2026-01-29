@@ -1,53 +1,52 @@
-export interface APIMartError {
-  error: {
-    code: number;
-    message: string;
-    type?: string;
-    status?: string;
-  };
+
+export enum AspectRatio {
+  AUTO = "auto",
+  SQUARE = "1:1",
+  PORTRAIT_4_3 = "3:4",
+  LANDSCAPE_4_3 = "4:3",
+  PORTRAIT_16_9 = "9:16",
+  LANDSCAPE_16_9 = "16:9",
+  R_3_2 = "3:2",
+  R_2_3 = "2:3",
+  R_5_4 = "5:4",
+  R_4_5 = "4:5",
+  R_21_9 = "21:9"
 }
 
-export interface TaskResponse {
-  code: number;
-  data: {
-    id: string;
-    status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-    progress: number;
-    result?: {
-      images?: { url: string[]; expires_at: number }[];
-      videos?: { url: string[]; expires_at: number }[];
-      thumbnail_url?: string;
-    };
-    error?: any;
-  };
+export enum ImageSize {
+  K1 = "1K",
+  K2 = "2K",
+  K4 = "4K"
 }
 
-export interface GeminiGenerationResponse {
-  code: number;
-  data: {
-    candidates: {
-      content: {
-        parts: { text: string }[];
-      };
-    }[];
-  };
+export interface GeneratedImage {
+  id: string;
+  taskId?: string; 
+  prompt: string;
+  url: string | null;
+  refThumbnail?: string; // 新增：记录当前任务使用的序列参考图
+  progress: number;
+  status: 'pending' | 'running' | 'succeeded' | 'failed' | 'error';
+  error?: string;
 }
 
 export interface GenerationConfig {
-  aspectRatio: "3:4" | "4:3" | "16:9" | "9:16" | "1:1";
-  resolution: "1080p" | "2K" | "4K";
-  duration: 5 | 10;
+  aspectRatio: AspectRatio;
+  imageSize: ImageSize;
 }
 
-export interface AnalysisResult {
-  imagePrompt: string;
-  videoPrompt: string;
-  reasoning: string;
-}
-
-export enum Step {
-  UPLOAD = 0,
-  ANALYZING = 1,
-  GENERATING = 2,
-  FINISHED = 3,
+export interface GrsaiApiResponse {
+  code: number;
+  msg: string;
+  data: {
+    id: string;
+    results?: Array<{
+      url: string;
+      content: string;
+    }>;
+    progress?: number;
+    status?: 'running' | 'succeeded' | 'failed';
+    failure_reason?: string;
+    error?: string;
+  };
 }

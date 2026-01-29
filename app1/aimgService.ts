@@ -1,7 +1,7 @@
 
 import { AspectRatio, ImageSize, GenerationConfig } from "./types";
 import { ApimartApiResponse, ApimartGenerationRequest } from "./typesApimart";
-import { API_CONFIG } from "../apiConfig";
+import { API_CONFIG } from "@/apiConfig";
 
 const BASE_URL = 'https://api.apimart.ai/v1';
 

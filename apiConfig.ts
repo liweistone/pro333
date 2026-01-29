@@ -6,16 +6,20 @@
 export const API_CONFIG = {
   // 绘图服务密钥 (Apimart / Gemini Image)
   get DRAW_KEY(): string {
-    const userKey = localStorage.getItem('STUDIO_PRO_DRAW_KEY');
-    // 优先级：1. 用户手动输入 2. 构建时注入的 DRAW_API_KEY 3. 主 API_KEY
-    return userKey || (process.env.DRAW_API_KEY as string) || (process.env.API_KEY as string) || "";
+    const userDrawKey = localStorage.getItem('STUDIO_PRO_DRAW_KEY');
+    const userAnalysisKey = localStorage.getItem('STUDIO_PRO_ANALYSIS_KEY');
+    
+    // 优先级：1. 本地绘图Key 2. 本地分析Key (备份) 3. 环境变量
+    return userDrawKey || userAnalysisKey || (process.env.DRAW_API_KEY as string) || (process.env.API_KEY as string) || "";
   },
 
   // 视觉分析服务密钥 (Grsai / Vision AI)
   get ANALYSIS_KEY(): string {
-    const userKey = localStorage.getItem('STUDIO_PRO_ANALYSIS_KEY');
-    // 优先级：1. 用户手动输入 2. 构建时注入的 ANALYSIS_API_KEY 3. 主 API_KEY
-    return userKey || (process.env.ANALYSIS_API_KEY as string) || (process.env.API_KEY as string) || "";
+    const userAnalysisKey = localStorage.getItem('STUDIO_PRO_ANALYSIS_KEY');
+    const userDrawKey = localStorage.getItem('STUDIO_PRO_DRAW_KEY');
+    
+    // 优先级：1. 本地分析Key 2. 本地绘图Key (备份) 3. 环境变量
+    return userAnalysisKey || userDrawKey || (process.env.ANALYSIS_API_KEY as string) || (process.env.API_KEY as string) || "";
   }
 };
 
