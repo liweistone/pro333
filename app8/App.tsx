@@ -17,6 +17,9 @@ import {
   Clock
 } from 'lucide-react';
 
+// 生产环境基础 URL
+const BASE_PROD_URL = 'https://aideator.top';
+
 const App8PortalApp: React.FC = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
@@ -27,6 +30,14 @@ const App8PortalApp: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // 辅助函数：获取完整的 API 地址
+    const getApiUrl = (endpoint: string) => {
+        if (window.location.hostname === 'localhost' || !window.location.hostname.includes('aideator.top')) {
+            return `${BASE_PROD_URL}${endpoint}`;
+        }
+        return endpoint;
+    };
+
     useEffect(() => {
         if (isLoggedIn) {
             fetchUserInfo();
@@ -36,7 +47,7 @@ const App8PortalApp: React.FC = () => {
 
     const fetchUserInfo = async () => {
         try {
-            const res = await fetch('/api/auth/me', {
+            const res = await fetch(getApiUrl('/api/auth/me'), {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (res.ok) {
@@ -53,16 +64,14 @@ const App8PortalApp: React.FC = () => {
     const loadPortalData = async () => {
         setLoading(true);
         try {
-            // 对接本地代理接口
             const [presetRes, articleRes] = await Promise.all([
-                fetch('/api/presets?limit=6'),
-                fetch('/api/articles?limit=10')
+                fetch(getApiUrl('/api/presets?limit=6')),
+                fetch(getApiUrl('/api/articles?limit=10'))
             ]);
             
             const pData = await presetRes.json();
             const aData = await articleRes.json();
             
-            // 兼容 D1 results 和 data 两种返回格式
             const finalPresets = Array.isArray(pData) ? pData : (pData.results || pData.data || []);
             const finalArticles = Array.isArray(aData) ? aData : (aData.results || aData.data || []);
             
@@ -80,7 +89,7 @@ const App8PortalApp: React.FC = () => {
         setError('');
         setLoading(true);
         try {
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch(getApiUrl('/api/auth/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(loginForm)
@@ -107,10 +116,9 @@ const App8PortalApp: React.FC = () => {
 
     const getImageUrl = (path: string | null) => {
         if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
-        // 如果是完整 URL 直接返回
         if (path.startsWith('http')) return path;
-        // 否则通过本地 R2 代理读取
-        return `/api/images/public/${path}`;
+        // 核心修复：直接通过核心节点地址请求图像
+        return `${BASE_PROD_URL}/api/images/public/${path}`;
     };
 
     if (!isLoggedIn) {
@@ -164,7 +172,6 @@ const App8PortalApp: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#020617] text-slate-100 flex">
-            {/* 侧边栏 */}
             <aside className="w-72 bg-slate-900/40 border-r border-white/5 h-screen sticky top-0 p-8 flex flex-col z-50 backdrop-blur-3xl">
                 <div className="flex items-center gap-4 mb-12">
                     <div className="bg-gradient-to-br from-indigo-500 to-purple-600 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg">
@@ -214,7 +221,6 @@ const App8PortalApp: React.FC = () => {
                 </div>
             </aside>
 
-            {/* 内容区 */}
             <main className="flex-1 p-16 overflow-y-auto">
                 <div className="max-w-6xl mx-auto space-y-16">
                     {activeTab === 'dashboard' && (

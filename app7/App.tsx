@@ -11,15 +11,16 @@ import {
   Heart, 
   MousePointer2, 
   Layers, 
-  ExternalLink,
   Clock,
   RefreshCcw,
-  AlertTriangle,
   ServerOff,
   Filter,
   ArrowUpRight
 } from 'lucide-react';
-import { Preset, PresetCategory } from './types';
+import { Preset } from './types';
+
+// 生产环境基础 URL
+const BASE_PROD_URL = 'https://aideator.top';
 
 const App7PresetHub: React.FC = () => {
   const [presets, setPresets] = useState<Preset[]>([]);
@@ -30,16 +31,26 @@ const App7PresetHub: React.FC = () => {
   const [hasError, setHasError] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // 辅助函数：获取完整的 API 地址
+  const getApiUrl = (endpoint: string) => {
+    // 优先尝试本地，如果是在非生产域名下运行，则直接指向生产服务器
+    if (window.location.hostname === 'localhost' || !window.location.hostname.includes('aideator.top')) {
+        return `${BASE_PROD_URL}${endpoint}`;
+    }
+    return endpoint;
+  };
+
   // 初始化加载分类与数据
   useEffect(() => {
     const init = async () => {
         setLoading(true);
         try {
-            const catRes = await fetch('/api/presets/categories');
+            const catRes = await fetch(getApiUrl('/api/presets/categories'));
             if (catRes.ok) setCategories(await catRes.json());
             await loadData();
         } catch (e) {
-            setHasError(true);
+            console.warn("Categories fetch failed, using defaults");
+            await loadData(); // 尝试加载数据
         } finally {
             setLoading(false);
         }
@@ -49,21 +60,23 @@ const App7PresetHub: React.FC = () => {
 
   // 监听分类与搜索变化
   useEffect(() => {
-    if (activeCategory || searchQuery) loadData();
+    loadData();
   }, [activeCategory]);
 
   const loadData = async () => {
     setLoading(true);
     setHasError(false);
     try {
-      let url = `/api/presets?limit=40`;
-      if (activeCategory !== '全部') url += `&category_id=${activeCategory}`;
-      if (searchQuery) url += `&q=${encodeURIComponent(searchQuery)}`;
+      let endpoint = `/api/presets?limit=40`;
+      if (activeCategory !== '全部') endpoint += `&category_id=${activeCategory}`;
+      if (searchQuery) endpoint += `&q=${encodeURIComponent(searchQuery)}`;
 
-      const res = await fetch(url);
+      const res = await fetch(getApiUrl(endpoint));
       if (res.ok) {
           const data = await res.json();
-          setPresets(Array.isArray(data) ? data : []);
+          // 处理不同的响应结构
+          const list = Array.isArray(data) ? data : (data.results || data.data || []);
+          setPresets(list);
       } else {
           setHasError(true);
       }
@@ -78,23 +91,24 @@ const App7PresetHub: React.FC = () => {
     navigator.clipboard.writeText(preset.positive);
     setCopiedId(preset.id);
     // 记录使用量
-    fetch(`/api/presets/${preset.id}/use`, { method: 'POST' }).catch(() => {});
+    fetch(getApiUrl(`/api/presets/${preset.id}/use`), { method: 'POST' }).catch(() => {});
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   const getImageUrl = (path: string | null) => {
     if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
-    return path.startsWith('http') ? path : `/api/images/public/${path}`;
+    if (path.startsWith('http')) return path;
+    // 修复：始终使用生产环境的图片代理地址，确保图像能显示
+    return `${BASE_PROD_URL}/api/images/public/${path}`;
   };
 
   const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
+    const date = new Date(timestamp * (timestamp > 10000000000 ? 1 : 1000));
     return date.toLocaleDateString();
   };
 
   return (
     <div className="min-h-screen bg-[#02040a] text-slate-200 flex flex-col font-sans selection:bg-indigo-500/30">
-      {/* 高端导航头 */}
       <header className="h-24 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center px-12 justify-between sticky top-0 z-50">
         <div className="flex items-center gap-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-[20px] shadow-[0_0_30px_rgba(99,102,241,0.3)]">
@@ -131,7 +145,6 @@ const App7PresetHub: React.FC = () => {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* 左侧筛选栏 */}
         <aside className="w-80 border-r border-white/5 p-10 space-y-12 bg-slate-950/20">
           <div className="space-y-8">
             <div className="flex items-center justify-between px-2">
@@ -141,7 +154,7 @@ const App7PresetHub: React.FC = () => {
             <nav className="flex flex-col gap-2">
               <button
                 onClick={() => setActiveCategory('全部')}
-                className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black transition-all uppercase tracking-widest ${activeCategory === '全部' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20' : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'}`}
+                className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black transition-all uppercase tracking-widest ${activeCategory === '全部' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}`}
               >
                 <LayoutGrid className="w-4 h-4" /> 全部预设
               </button>
@@ -149,7 +162,7 @@ const App7PresetHub: React.FC = () => {
                 <button
                   key={id}
                   onClick={() => setActiveCategory(id)}
-                  className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black transition-all uppercase tracking-widest ${activeCategory === id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 translate-x-1' : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'}`}
+                  className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black transition-all uppercase tracking-widest ${activeCategory === id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 translate-x-1' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}`}
                 >
                   <Layers className="w-4 h-4" /> {name}
                 </button>
@@ -172,7 +185,6 @@ const App7PresetHub: React.FC = () => {
           </div>
         </aside>
 
-        {/* 内容主瀑布流 */}
         <main className="flex-1 p-12 overflow-y-auto custom-scrollbar bg-[#02040a]">
           {loading && presets.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center space-y-8">
@@ -185,14 +197,14 @@ const App7PresetHub: React.FC = () => {
                   <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">正在安全对接云端数据网关...</span>
                </div>
             </div>
-          ) : hasError && presets.length === 0 ? (
+          ) : (hasError && presets.length === 0) ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-12">
                <div className="w-24 h-24 bg-rose-500/10 rounded-[40px] flex items-center justify-center mb-10 border border-rose-500/20 shadow-2xl">
                   <ServerOff className="w-12 h-12 text-rose-500" />
                </div>
                <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Sync Connection Lost</h2>
                <p className="text-slate-500 text-sm mt-6 max-w-sm leading-relaxed font-medium uppercase tracking-widest">
-                 数据库连接中断。请确保已在 Cloudflare 控制面板将 D1 绑定至名为 "DB" 的变量。
+                 数据库连接中断或本地代理未配置。系统将自动尝试通过核心节点 {BASE_PROD_URL} 重连。
                </p>
                <button onClick={loadData} className="mt-10 px-12 py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-xl">Re-establish Sync</button>
             </div>
@@ -206,7 +218,6 @@ const App7PresetHub: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-12">
               {presets.map(preset => (
                 <div key={preset.id} className="group bg-slate-900/60 border border-white/5 rounded-[40px] overflow-hidden hover:border-indigo-500/40 transition-all duration-700 flex flex-col shadow-2xl hover:-translate-y-3">
-                  {/* 4K 级别图片预览 */}
                   <div className="relative aspect-[4/5] bg-black overflow-hidden border-b border-white/5">
                     <img src={getImageUrl(preset.image)} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-[1500ms]" loading="lazy" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
@@ -222,7 +233,6 @@ const App7PresetHub: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 精致元数据区 */}
                   <div className="p-10 flex-1 flex flex-col gap-8">
                     <div className="space-y-3">
                       <h3 className="text-xl font-black text-white group-hover:text-indigo-400 transition-colors truncate tracking-tight" title={preset.title}>{preset.title}</h3>
@@ -232,7 +242,6 @@ const App7PresetHub: React.FC = () => {
                     </div>
 
                     <div className="mt-auto space-y-8">
-                       {/* 提示词透传窗口 */}
                        <div className="p-6 bg-black/60 rounded-[32px] border border-white/5 relative group/prompt overflow-hidden">
                           <p className="text-[10px] font-mono text-indigo-200/50 italic line-clamp-3 leading-loose select-none">
                             {preset.positive}

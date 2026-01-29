@@ -1,7 +1,8 @@
+
 import React, { useMemo } from 'react';
 import { AspectRatio, ImageSize, GenerationConfig, SubjectType, PoseCategory, ShootingAngle, ExtendedConfigState, CameraState, SkeletonState, LightingState, ExpressionState, BodyShapeState } from '../types';
 import { POSE_LIBRARY, POSE_CATEGORIES } from '../constants/poseLibrary';
-import { User, Package, Image as ImageIcon, CheckCircle2, Rotate3D, Accessibility, Camera, Lightbulb, Smile, ToggleLeft, ToggleRight } from 'lucide-react';
+import { User, Package, Image as ImageIcon, CheckCircle2, Rotate3d, Accessibility, Camera, Lightbulb, Smile, ToggleLeft, ToggleRight } from 'lucide-react';
 import ThreeDCameraControl from './ThreeDCameraControl';
 import ThreeDPoseEditor from './ThreeDPoseEditor';
 import ThreeDLightEditor from './ThreeDLightEditor';
