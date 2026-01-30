@@ -1,4 +1,3 @@
-
 import { API_CONFIG } from '@/apiConfig';
 
 interface ApimartConfig {
@@ -36,10 +35,13 @@ export class ApimartProvider {
     imageUrls: string[] = []
   ): Promise<string> {
     const url = `${this.config.baseUrl}/v1/images/generations`;
+    // 核心修复：同时发送 size 和 aspect_ratio 确保网关兼容性
+    const targetRatio = config.aspectRatio || config.size || '1:1';
     const payload = {
       model: config.model || 'gemini-3-pro-image-preview',
       prompt,
-      size: config.size || '1:1',
+      size: targetRatio,
+      aspect_ratio: targetRatio, 
       resolution: config.resolution || '1K',
       n: 1,
       image_urls: imageUrls.length > 0 ? imageUrls.map(url => ({ url })) : undefined
