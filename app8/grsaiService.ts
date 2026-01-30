@@ -37,13 +37,17 @@ export const checkTaskStatus = async (taskId: string): Promise<any> => {
   try {
     const status = await taskAdapter.getTaskStatus(taskId);
     
+    // 修复：从 TaskAdapter 返回的标准结构中正确提取图片 URL
+    // TaskAdapter 将 Apimart 的原始 result 对象放在 status.results 中
+    const imageUrl = status.results?.images?.[0]?.url?.[0];
+
     return {
       id: taskId,
       status: status.status === 'completed' || status.status === 'succeeded' ? 'succeeded' : 
              (status.status === 'failed' ? 'failed' : 'running'),
       progress: status.progress,
-      results: status.imageUrl ? 
-        [{ url: status.imageUrl }] : undefined,
+      results: imageUrl ? 
+        [{ url: imageUrl }] : undefined,
       failure_reason: status.error,
       error: status.error
     };

@@ -76,17 +76,6 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
             </div>
           </div>
 
-          <div className="bg-blue-500/5 border border-blue-500/20 p-6 rounded-[24px] shadow-inner">
-            <div className="flex gap-4">
-                <div className="text-2xl">🔐</div>
-                <p className="text-sm text-blue-100/90 leading-relaxed font-medium">
-                    <span className="text-blue-300 font-black">本地存储安全协议：</span><br/>
-                    密钥仅保存在您的浏览器（LocalStorage）中，绝不经过中转服务器，<br/>
-                    确保您的 API 资产完全私有化且数据传输链路最短。
-                </p>
-            </div>
-          </div>
-
           <div className="flex gap-5 pt-4">
             <button 
               onClick={handleClear}
@@ -333,7 +322,7 @@ const App: React.FC = () => {
       {view !== 'launcher' && (
         <button 
           onClick={() => setView('launcher')}
-          className="fixed bottom-10 right-10 z-[9999] flex items-center gap-3 px-6 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-[0_20px_50px_rgba(59,130,246,0.5)] border border-blue-400/30 transition-all duration-300 hover:scale-110 active:scale-95 group"
+          className="fixed bottom-10 right-10 z-[9999] flex items-center gap-3 px-6 py-4 bg-blue-600 hover:bg-blue-50 text-white rounded-full shadow-[0_20px_50px_rgba(59,130,246,0.5)] border border-blue-400/30 transition-all duration-300 hover:scale-110 active:scale-95 group"
         >
           <Home className="w-5 h-5 group-hover:rotate-12 transition-transform" />
           <span className="font-black text-sm uppercase tracking-widest">返回大厅</span>
