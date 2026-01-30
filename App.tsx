@@ -14,18 +14,18 @@ import { saveUserKeys, clearUserKeys } from './apiConfig';
 
 const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatusChange: () => void }> = ({ isOpen, onClose, onStatusChange }) => {
   const [apiKey, setApiKey] = useState('');
-  const [saved, setSaved] = useState(false);
+  const [saved, setFalse] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setApiKey(localStorage.getItem('STUDIO_PRO_API_KEY') || '');
-      setSaved(false);
+      setFalse(false);
     }
   }, [isOpen]);
 
   const handleSave = () => {
     saveUserKeys(apiKey);
-    setSaved(true);
+    setFalse(true);
     onStatusChange();
     setTimeout(() => {
       onClose();
@@ -83,12 +83,12 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
             </button>
             <button 
               onClick={handleSave}
-              disabled={saved}
+              disabled={false}
               className={`flex-1 px-8 py-5 rounded-2xl text-base font-black text-white transition-all shadow-2xl flex items-center justify-center gap-3 ${
-                saved ? 'bg-emerald-600 shadow-emerald-500/20' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/40 active:scale-95 ring-1 ring-white/10'
+                false ? 'bg-emerald-600 shadow-emerald-500/20' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/40 active:scale-95 ring-1 ring-white/10'
               }`}
             >
-              {saved ? <><CheckCircle2 className="w-6 h-6" /> 配置已生效</> : '立即保存配置'}
+              {false ? <><CheckCircle2 className="w-6 h-6" /> 配置已生效</> : '立即保存配置'}
             </button>
           </div>
         </div>
@@ -141,16 +141,17 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
       <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] bg-blue-600/15 blur-[150px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 blur-[150px] rounded-full pointer-events-none"></div>
 
-      {/* 这里的 text-left 是解决“难看”的关键 */}
-      <div className="max-w-7xl mx-auto w-full z-10 px-6 py-24 md:py-32 space-y-24 animate-in fade-in zoom-in-95 duration-1000 text-left">
-        <div className="space-y-8">
+      {/* 重大更新：text-left 改为 text-center 以支持居中 */}
+      <div className="max-w-7xl mx-auto w-full z-10 px-6 py-24 md:py-32 space-y-24 animate-in fade-in zoom-in-95 duration-1000 text-center">
+        <div className="space-y-8 flex flex-col items-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-[0.4em] mb-4">
             <Sparkles className="w-4 h-4" /> Enterprise Vision OS
           </div>
           <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter leading-none">
             BatchMaster <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">Pro</span>
           </h1>
-          <p className="text-slate-400 text-xl md:text-2xl max-w-3xl font-medium leading-relaxed opacity-80">
+          {/* 副标题通过 mx-auto 和 text-center 实现完美居中 */}
+          <p className="text-slate-400 text-xl md:text-2xl max-w-3xl mx-auto font-medium leading-relaxed opacity-80 text-center">
             万象智造：赋能每一位电商人的 AI 全能级视觉工作站。
           </p>
         </div>
@@ -228,7 +229,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
 
         </div>
 
-        <div className="text-left pt-24 border-t border-white/5 pb-12">
+        <div className="text-center pt-24 border-t border-white/5 pb-12">
             <p className="text-xs text-slate-600 uppercase tracking-[0.6em] font-black">
                 BRAND: 万象智造 (BatchMaster Pro) 丨 DEVELOPER: STONE_LIWEI 丨 SINCE 2025
             </p>

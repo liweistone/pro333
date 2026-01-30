@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Video, Image as ImageIcon, UserCircle2, Accessibility, Sparkles, Plus, Loader2, LayoutGrid, MonitorPlay, Zap, Wand2, ArrowRight, CheckCircle2, Download, Maximize2, X, RefreshCcw, Trash2, Cpu } from 'lucide-react';
+import { Video, Image as ImageIcon, UserCircle2, Accessibility, Sparkles, Plus, Loader2, LayoutGrid, MonitorPlay, Zap, Wand2, ArrowRight, CheckCircle2, Download, Maximize2, X, RefreshCcw, Trash2, Cpu, Lock } from 'lucide-react';
 import { ImageAdapter } from '../services/adapters/imageAdapter';
 import { VideoAdapter } from '../services/adapters/videoAdapter';
 
@@ -16,7 +16,8 @@ interface App9LumiereStationProps {
 }
 
 const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefillData }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('video');
+  // 核心整改：默认 Tab 切换为 image
+  const [activeTab, setActiveTab] = useState<TabType>('image');
   const [prompt, setPrompt] = useState('');
   
   const [imageRefs, setImageRefs] = useState<string[]>([]);
@@ -205,24 +206,30 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
         <div className="flex items-end pl-8">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
+            const isLocked = tab.id !== 'image'; // 核心逻辑：非图片生成 Tab 锁死
+            
             return (
               <button
                 key={tab.id}
+                disabled={isLocked || isGenerating}
                 onClick={() => { 
-                  if(isGenerating) return;
+                  if(isGenerating || isLocked) return;
                   setActiveTab(tab.id as TabType); 
                   setResultUrl(null); 
                   setProgress(0);
                 }}
-                className={`relative px-12 py-4 transition-all duration-500 font-black text-sm flex items-center gap-2 group tracking-tight ${isActive ? 'bg-white text-slate-900 rounded-t-[24px] z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]' : 'bg-slate-200/60 text-slate-400 hover:text-slate-600'}`}
+                className={`relative px-12 py-4 transition-all duration-500 font-black text-sm flex items-center gap-2 group tracking-tight 
+                  ${isActive ? 'bg-white text-slate-900 rounded-t-[24px] z-10 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]' : 'bg-slate-200/60 text-slate-400'} 
+                  ${isLocked ? 'cursor-not-allowed opacity-40 grayscale' : 'hover:text-slate-600'}`}
                 style={{
                   clipPath: isActive ? 'none' : 'polygon(8% 0, 100% 0, 92% 100%, 0% 100%)',
                   marginLeft: isActive ? '-12px' : '-24px',
                   marginRight: isActive ? '-12px' : '0',
                 }}
               >
-                <tab.icon className={`w-4 h-4 transition-colors ${isActive ? tab.color : 'text-slate-300'}`} />
+                {isLocked ? <Lock className="w-3.5 h-3.5 text-slate-400" /> : <tab.icon className={`w-4 h-4 transition-colors ${isActive ? tab.color : 'text-slate-300'}`} />}
                 {tab.label}
+                {isLocked && <span className="absolute top-1 right-3 text-[7px] font-black uppercase text-slate-400 tracking-widest scale-75 opacity-70">Coming Soon</span>}
               </button>
             );
           })}
@@ -241,7 +248,7 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   disabled={isGenerating}
-                  placeholder={activeTab === 'image' ? '输入绘图提示词，或留空基于上方素材进行风格一致性重构...' : '描述一段动态场景，例如：日落时分，城市灯光逐渐亮起...'}
+                  placeholder={activeTab === 'image' ? '输入绘图提示词，或留空基于上方素材进行风格一致性重构...' : '当前功能正在内部测试中，敬请期待...'}
                   className="w-full flex-1 text-lg font-bold text-slate-800 placeholder:text-slate-200 outline-none resize-none bg-transparent leading-relaxed"
                />
                
