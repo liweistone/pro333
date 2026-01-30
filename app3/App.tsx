@@ -14,15 +14,15 @@ const App: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">海报风格智造家</h1>
-              <p className="text-xs text-slate-500">Poster Vision Lab Pro</p>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">万象风格智造</h1>
+              <p className="text-xs text-slate-500">BatchMaster Aesthetic Engine</p>
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-4">
             <span className="text-sm font-medium text-slate-400">|</span>
             <div className="flex items-center space-x-1 text-slate-600">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              <span className="text-xs">API 状态：在线</span>
+              <span className="text-xs">系统状态：万象同步中</span>
             </div>
           </div>
         </div>
@@ -34,7 +34,7 @@ const App: React.FC = () => {
 
       <footer className="bg-white border-t border-slate-200 py-6 mt-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm text-slate-400">© 2024 AI 视觉创意实验室 - 赋能每一份创意</p>
+          <p className="text-sm text-slate-400">© 2025 万象智造 (BatchMaster Pro) - 让创意规模化生产</p>
         </div>
       </footer>
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
@@ -13,7 +14,8 @@ import {
   RefreshCcw,
   Filter,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 import { Preset } from './types';
 
@@ -22,10 +24,14 @@ let cachedPresets: Preset[] = [];
 let cachedCategories: { [id: string]: string } = {};
 let hasInitialized = false;
 
-const PAGE_SIZE = 24; // 增加每页加载量以适配更密的网格
+const PAGE_SIZE = 24; 
 const BASE_PROD_URL = 'https://aideator.top';
 
-const App7PresetHub: React.FC = () => {
+interface App7PresetHubProps {
+  onUsePreset?: (data: { prompt: string; image: string }) => void;
+}
+
+const App7PresetHub: React.FC<App7PresetHubProps> = ({ onUsePreset }) => {
   const [presets, setPresets] = useState<Preset[]>(cachedPresets);
   const [activeCategory, setActiveCategory] = useState<string>('全部');
   const [categories, setCategories] = useState<{ [id: string]: string }>(cachedCategories);
@@ -37,7 +43,6 @@ const App7PresetHub: React.FC = () => {
   const [hasError, setHasError] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // 防重请求锁
   const isFetchingRef = useRef(false);
   const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +61,6 @@ const App7PresetHub: React.FC = () => {
     return `${BASE_PROD_URL}/api/images/public${normalizedPath}`;
   };
 
-  // 数据加载逻辑 (含防重与去重)
   const loadData = async (isAppend: boolean = false) => {
     if (isFetchingRef.current) return;
     if (isAppend && !hasMore) return;
@@ -130,7 +134,7 @@ const App7PresetHub: React.FC = () => {
     if (activeCategory === '全部' && !searchQuery && presets.length === cachedPresets.length && presets.length > 0) return;
     setHasMore(true);
     loadData(false);
-  }, [activeCategory]);
+  }, [activeCategory, searchQuery]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -145,11 +149,15 @@ const App7PresetHub: React.FC = () => {
     return () => observer.disconnect();
   }, [hasMore, presets.length]);
 
-  const handleCopyPrompt = (preset: Preset) => {
-    navigator.clipboard.writeText(preset.positive);
-    setCopiedId(preset.id);
+  const handleUseInspiration = (preset: Preset) => {
+    if (onUsePreset) {
+      onUsePreset({
+        prompt: preset.positive,
+        image: getImageUrl(preset.image)
+      });
+    }
+    // 同时上报使用统计
     fetch(getApiUrl(`/api/presets/${preset.id}/use`), { method: 'POST' }).catch(() => {});
-    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
@@ -190,21 +198,21 @@ const App7PresetHub: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-64 border-r border-white/5 p-6 space-y-8 bg-slate-950/20 shrink-0">
           <div>
-            <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 px-2">Library</h2>
-            <nav className="flex flex-col gap-1.5">
+            <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-4 px-2">Library</h2>
+            <nav className="flex flex-col gap-2.5">
               <button
                 onClick={() => setActiveCategory('全部')}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black transition-all uppercase tracking-widest ${activeCategory === '全部' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}`}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px] font-bold transition-all uppercase tracking-widest ${activeCategory === '全部' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}`}
               >
-                <LayoutGrid className="w-3.5 h-3.5" /> 全部预设
+                <LayoutGrid className="w-[18px] h-[18px]" /> 全部预设
               </button>
               {Object.entries(categories).map(([id, name]) => (
                 <button
                   key={id}
                   onClick={() => setActiveCategory(id)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black transition-all uppercase tracking-widest ${activeCategory === id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}`}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px] font-bold transition-all uppercase tracking-widest ${activeCategory === id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}`}
                 >
-                  <Layers className="w-3.5 h-3.5" /> {name}
+                  <Layers className="w-[18px] h-[18px]" /> {name}
                 </button>
               ))}
             </nav>
@@ -225,41 +233,53 @@ const App7PresetHub: React.FC = () => {
              </div>
           ) : (
             <div className="space-y-8">
-              {/* 高密度网格：从 2 列到 6 列 */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">
                 {presets.map(preset => (
                   <div key={preset.id} className="group bg-slate-900/40 border border-white/5 rounded-xl overflow-hidden hover:border-indigo-500/30 transition-all duration-500 flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1">
-                    {/* 图片区域：比例优化为 3:4，并确保 object-top 保护 Logo */}
                     <div className="relative aspect-[3/4] bg-black overflow-hidden border-b border-white/5">
                       <img 
                         src={getImageUrl(preset.image)} 
-                        className="w-full h-full object-cover object-top opacity-85 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" 
+                        className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 saturate-150 scale-110 pointer-events-none" 
+                        aria-hidden="true"
+                      />
+                      
+                      <img 
+                        src={getImageUrl(preset.image)} 
+                        className="relative z-10 w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-all duration-700" 
                         loading="lazy" 
                         onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
                       
-                      {/* 悬停快捷按钮 */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px] bg-indigo-600/5">
+                      <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-60"></div>
+                      
+                      {/* Hover Action: Click to trigger modal instead of just copy */}
+                      <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px] bg-indigo-600/10">
                           <button 
-                            onClick={() => handleCopyPrompt(preset)} 
-                            className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-black text-[9px] uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                            onClick={() => handleUseInspiration(preset)} 
+                            className="px-5 py-2.5 bg-white text-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 ring-4 ring-white/10"
                           >
-                            {copiedId === preset.id ? <CheckCircle2 className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                            {copiedId === preset.id ? 'Copied' : 'Copy Prompt'}
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Use Inspiration
                           </button>
                       </div>
                     </div>
 
-                    <div className="p-4 flex-1 flex flex-col justify-between">
-                      <h3 className="text-[11px] font-black text-white/90 group-hover:text-indigo-400 transition-colors truncate mb-3" title={preset.title}>
+                    <div className="p-4 flex-1 flex flex-col">
+                      <h3 className="text-[11px] font-black text-white/90 group-hover:text-indigo-400 transition-colors truncate mb-1" title={preset.title}>
                         {preset.title}
                       </h3>
 
-                      <div className="flex items-center justify-between border-t border-white/5 pt-3">
+                      <div className="my-3 p-3 bg-slate-950/60 border border-white/5 rounded-xl h-24 overflow-hidden relative cursor-default group/desc">
+                         <p className="text-[10px] leading-relaxed text-slate-400 font-medium line-clamp-4 italic transition-colors group-hover/desc:text-slate-300">
+                            {preset.description || preset.positive}
+                         </p>
+                         <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-950/80 to-transparent pointer-events-none"></div>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-auto">
                          <div className="flex gap-3">
                             <div className="flex items-center gap-1" title="Views">
                               <Eye className="w-3 h-3 text-slate-600" />
@@ -270,14 +290,22 @@ const App7PresetHub: React.FC = () => {
                               <span className="text-[9px] text-slate-500 font-bold tabular-nums">{preset.favorite_count || 0}</span>
                             </div>
                          </div>
-                         <MousePointer2 className="w-3 h-3 text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+                         <button 
+                           onClick={() => {
+                             navigator.clipboard.writeText(preset.positive);
+                             setCopiedId(preset.id);
+                             setTimeout(() => setCopiedId(null), 2000);
+                           }}
+                           className="text-slate-700 hover:text-indigo-400 transition-colors"
+                         >
+                           {copiedId === preset.id ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                         </button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* 加载指示器 */}
               <div ref={loaderRef} className="py-12 flex flex-col items-center justify-center h-24">
                 {isNextPageLoading ? (
                   <div className="flex items-center gap-2 text-indigo-400 animate-pulse">
