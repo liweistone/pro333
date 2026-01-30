@@ -12,15 +12,15 @@ const Header: React.FC = () => {
             </svg>
           </div>
           <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
-            电商批量 <span className="text-blue-600">裂变大师</span>
+            万象 <span className="text-blue-600">裂变大师</span>
           </h1>
         </div>
         <div className="hidden sm:flex items-center gap-4 text-right">
           <div className="flex flex-col items-end">
              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                Vision Pro 视觉引擎
+                BatchMaster Visual Engine
              </span>
-             <span className="text-[10px] text-slate-400 mt-0.5">服务接口: 已连接 (v1/draw)</span>
+             <span className="text-[10px] text-slate-400 mt-0.5">全量生产流水线已连接</span>
           </div>
         </div>
       </div>

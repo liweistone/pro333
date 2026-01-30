@@ -1,123 +1,40 @@
-
 import { ANALYSIS_CONFIG } from '../constants/analysis';
-import { API_CONFIG } from '@/apiConfig';
+import { MultimodalAdapter } from "../../services/adapters/multimodalAdapter";
 
-export interface AnalysisResponse {
-  content: string;
-}
+const multimodalAdapter = new MultimodalAdapter();
 
-const API_URL = "https://grsaiapi.com/v1/chat/completions";
-
-const compressImage = (base64Str: string, maxWidth = 1024, quality = 0.8): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = base64Str;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-      if (width > maxWidth || height > maxWidth) {
-        if (width > height) {
-          height *= maxWidth / width;
-          width = maxWidth;
-        } else {
-          width *= maxWidth / height;
-          height = maxWidth;
-        }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return reject(new Error('Canvas failed'));
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
-    };
-    img.onerror = reject;
-  });
-};
-
+/**
+ * 使用大项目统一适配器分析服装特征
+ * 升级模型至 gemini-3-pro-preview 以获得更精准的细节捕捉
+ */
 export const analyzeClothingImage = async (
   base64Image: string,
   onChunk?: (chunk: string) => void
 ): Promise<string> => {
-  // 动态获取最新的 Key
-  const API_KEY = API_CONFIG.ANALYSIS_KEY;
-
   try {
-    const compressedBase64 = await compressImage(base64Image);
-    const base64Data = compressedBase64.split(',')[1];
+    const userPrompt = `${ANALYSIS_CONFIG.CLOTHING_USER_PROMPT} 请直接输出描述文字，不要带任何 Markdown 标记。`;
+    
+    // 使用大项目统一的 MultimodalAdapter，它会自动使用大厅配置的 Master Key
+    const result = await multimodalAdapter.analyzeContent(
+      userPrompt,
+      base64Image,
+      'gemini-3-pro-preview' // 强制升级到旗舰分析模型
+    );
 
-    const payload = {
-      model: "gemini-2.5-flash",
-      stream: !!onChunk,
-      messages: [
-        {
-          role: "system",
-          content: ANALYSIS_CONFIG.CLOTHING_SYSTEM_PROMPT
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: ANALYSIS_CONFIG.CLOTHING_USER_PROMPT + " 请直接输出描述文字，不要带任何 Markdown 标记。" },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Data}`
-              }
-            }
-          ]
-        }
-      ]
-    };
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error ${response.status}: ${errorText}`);
-    }
-
-    if (onChunk && response.body) {
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim() !== '');
-
-        for (const line of lines) {
-          const message = line.replace(/^data: /, '');
-          if (message === '[DONE]') break;
-          try {
-            const parsed = JSON.parse(message);
-            const content = parsed.choices[0]?.delta?.content || "";
-            if (content) {
-              fullContent += content;
-              onChunk(content);
-            }
-          } catch (e) { }
-        }
+    const content = result.content || "";
+    
+    // 如果需要模拟流式输出效果
+    if (onChunk && content) {
+      const words = content.split(' ');
+      for (const word of words) {
+        onChunk(word + ' ');
+        await new Promise(r => setTimeout(r, 30)); // 模拟呼吸感
       }
-      return fullContent;
-    } else {
-      const result = await response.json();
-      if (result.error) throw new Error(result.error.message);
-      let content = result.choices[0]?.message?.content || "";
-      return content.replace(/```json|```/g, "").trim();
     }
+
+    return content.replace(/```json|```/g, "").trim();
   } catch (error: any) {
-    console.error("Visual Analysis Error:", error);
-    throw error;
+    console.error("Studio Pro Analysis Error:", error);
+    throw new Error(error.message || "视觉解构服务暂时不可用，请检查大厅 API 配置");
   }
 };

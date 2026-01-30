@@ -12,15 +12,15 @@ const Header: React.FC = () => {
             </svg>
           </div>
           <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
-            智拍大师 <span className="text-blue-600">Pro</span>
+            万象智拍 <span className="text-blue-600">Pro</span>
           </h1>
         </div>
         <div className="hidden sm:flex items-center gap-4">
           <div className="flex flex-col items-end">
              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-tighter border border-emerald-100">
-                API Key Active
+                BatchMaster Protocol
              </span>
-             <span className="text-[10px] text-slate-400 mt-0.5">Node: https://aideator.top/</span>
+             <span className="text-[10px] text-slate-400 mt-0.5">万象生产力引擎已就绪</span>
           </div>
         </div>
       </div>

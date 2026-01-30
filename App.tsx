@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import BatchMasterApp from './batch_master/BatchMasterApp';
 import ProStudioApp from './pro_studio/ProStudioApp';
@@ -60,7 +61,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
           <div className="space-y-8">
             <div className="space-y-4">
               <label className="text-sm font-black text-blue-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
-                <Key className="w-5 h-5" /> 智造密钥 (API KEY)
+                <Key className="w-5 h-5" /> 万象智造密钥 (API KEY)
               </label>
               <input 
                 type="password" 
@@ -113,7 +114,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
   }, []);
 
   const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct') => {
-    if (!hasCustomKey) {
+    if (type !== 'presets' && !hasCustomKey) {
         setIsSettingsOpen(true);
         return;
     }
@@ -149,14 +150,14 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
       <div className="max-w-7xl mx-auto w-full z-10 px-6 py-24 md:py-32 space-y-24 animate-in fade-in zoom-in-95 duration-1000 text-center">
         <div className="space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-[0.4em] mb-4">
-            <Sparkles className="w-4 h-4" /> Professional Vision Ecosystem
+            <Sparkles className="w-4 h-4" /> Enterprise Vision OS
           </div>
           <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter leading-none">
-            Studio <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">Pro</span>
+            BatchMaster <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">Pro</span>
           </h1>
           <p className="text-slate-400 text-xl md:text-2xl max-w-3xl mx-auto font-medium leading-relaxed opacity-80">
-            赋能每一位电商人的 AI 全能级视觉工作站。<br/>
-            集策略策划、3D 姿态重塑与规模化裂变于一体的旗舰生产力 toolset。
+            万象智造：赋能每一位电商人的 AI 全能级视觉工作站。<br/>
+            集策略策划、3D 姿态重塑与工业级规模化裂变于一体的旗舰生产力系统。
           </p>
 
           <div className="flex justify-center pt-8">
@@ -174,13 +175,33 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+          <button onClick={() => handleCardClick('presets')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/80 border-2 border-violet-500/40 hover:border-violet-400 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-[0_0_40px_rgba(139,92,246,0.15)] active:scale-95 overflow-hidden animate-breathe">
+            <div className="absolute top-4 right-6 z-20">
+                <span className="px-3 py-1 bg-violet-600 text-white text-[10px] font-black rounded-full shadow-lg shadow-violet-500/50 uppercase tracking-widest animate-pulse">Free</span>
+            </div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/10 blur-[80px] -mr-32 -mt-32 group-hover:bg-violet-600/20 transition-colors"></div>
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border-2 bg-violet-500/20 border-violet-500/30 group-hover:bg-violet-600 group-hover:text-white text-violet-400 transition-all duration-700 mb-8 shadow-xl">
+              <Database className="w-10 h-10" />
+            </div>
+            <div className="flex items-center gap-2 mb-6">
+                <h2 className="text-3xl font-black text-white tracking-tight">万象 D1 预设中心</h2>
+                <span className="bg-violet-500/20 text-violet-400 text-[10px] font-black border border-violet-500/30 px-2 py-0.5 rounded-full uppercase tracking-tighter">灵感库</span>
+            </div>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
+              云端灵感大数据。精选数千组商业级提示词与视觉指纹，一键同步全球顶尖方案。
+            </p>
+            <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-violet-400 group-hover:gap-6 transition-all">
+              探索预设库 <ArrowRight className="w-4 h-4" />
+            </div>
+          </button>
+
           <button onClick={() => handleCardClick('pro')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-cyan-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-cyan-600/10 transition-colors"></div>
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-cyan-600/10 border-cyan-600/20 group-hover:bg-cyan-600 group-hover:text-white text-cyan-400 transition-all duration-700 mb-8 shadow-xl">
               <Camera className="w-10 h-10" />
             </div>
             <div className="flex items-center gap-2 mb-6">
-                <h2 className="text-3xl font-black text-white tracking-tight">智拍大师 Pro</h2>
+                <h2 className="text-3xl font-black text-white tracking-tight">万象智拍 Pro</h2>
                 <span className="bg-cyan-500 text-[12px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">旗舰版</span>
             </div>
             <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
@@ -196,7 +217,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-purple-600/10 border-purple-600/20 group-hover:bg-purple-600 group-hover:text-white text-purple-400 transition-all duration-700 mb-8 shadow-xl">
               <LayoutGrid className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">裂变大师</h2>
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">万象裂变大师</h2>
             <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
               电商工业化生产引擎。核心指纹锚定技术，一键裂变数十组专业摄影机位素材集。
             </p>
@@ -210,7 +231,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-indigo-100/10 border-indigo-50/20 group-hover:bg-indigo-600 group-hover:text-white text-indigo-400 transition-all duration-700 mb-8 shadow-xl">
               <Palette className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">海报风格智造家</h2>
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">万象风格智造</h2>
             <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
               深度识别视觉 DNA。资产融合技术，无损复刻顶尖海报布局与高级审美风格。
             </p>
@@ -219,26 +240,12 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             </div>
           </button>
 
-          <button onClick={() => handleCardClick('presets')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-violet-500/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-violet-600/10 transition-colors"></div>
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-violet-500/10 border-violet-500/20 group-hover:bg-violet-600 group-hover:text-white text-violet-400 transition-all duration-700 mb-8 shadow-xl">
-              <Database className="w-10 h-10" />
-            </div>
-            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">D1 预设中心 Hub</h2>
-            <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
-              云端灵感大数据。精选数千组商业级提示词与视觉指纹，一键同步全球顶尖方案。
-            </p>
-            <div className="mt-auto flex items-center gap-3 font-black text-xs uppercase tracking-[0.3em] text-violet-400 group-hover:gap-6 transition-all">
-              探索预设库 <ArrowRight className="w-4 h-4" />
-            </div>
-          </button>
-
           <button onClick={() => handleCardClick('refine')} className="group relative flex flex-col text-left p-10 md:p-12 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-blue-400/50 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 shadow-2xl active:scale-95 overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-blue-400/10 transition-colors"></div>
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-blue-400/10 border-blue-400/20 group-hover:bg-blue-400 group-hover:text-white text-blue-300 transition-all duration-700 mb-8 shadow-xl">
               <Wand2 className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">方案精修智造</h2>
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">万象精修工厂</h2>
             <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
               灵感工程化闭环。针对简单构思进行专家级细节增补，自动驱动 4K 高清渲染。
             </p>
@@ -252,7 +259,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-emerald-600/10 border-emerald-600/20 group-hover:bg-emerald-600 group-hover:text-white text-emerald-400 transition-all duration-700 mb-8 shadow-xl">
               <BrainCircuit className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">全链路商业智造</h2>
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">万象商业全案</h2>
             <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
               逻辑推理驱动。深度解构产品核心卖点，自动化输出高转化电商全案与素材。
             </p>
@@ -266,7 +273,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             <div className="w-20 h-20 rounded-2xl flex items-center justify-center border bg-cyan-500/10 border-cyan-500/20 group-hover:bg-cyan-600 group-hover:text-white text-cyan-400 transition-all duration-700 mb-8 shadow-xl">
               <Zap className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">流光智造 Pro</h2>
+            <h2 className="text-3xl font-black text-white mb-6 tracking-tight">万象流光智造 Pro</h2>
             <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
               工业级产品流光特效。DNA 拓扑分析构思剧本，渲染高保真动态流光智造视频。
             </p>
@@ -292,7 +299,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
 
         <div className="text-center pt-24 border-t border-white/5 pb-12">
             <p className="text-xs text-slate-600 uppercase tracking-[0.6em] font-black hover:text-slate-400 transition-colors">
-                DEVELOPER: STONE_LIWEI 丨 OFFICIAL: AIDEATOR.TOP 丨 SINCE 2025
+                BRAND: 万象智造 (BatchMaster Pro) 丨 DEVELOPER: STONE_LIWEI 丨 SINCE 2025
             </p>
         </div>
       </div>

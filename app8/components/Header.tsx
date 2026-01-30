@@ -15,15 +15,15 @@ const Header: React.FC = () => {
             <h1 className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">
               万象批改助手
             </h1>
-            <span className="text-[10px] text-slate-400 font-medium tracking-widest mt-1 block">专业级多图同步替换引擎</span>
+            <span className="text-[10px] text-slate-400 font-medium tracking-widest mt-1 block">工业级多图同步修正引擎</span>
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-4">
           <div className="flex flex-col items-end">
              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                同步引擎 v1.2
+                BatchMaster OS v2.0
              </span>
-             <span className="text-[10px] text-slate-400 mt-0.5">多图并行处理模式已开启</span>
+             <span className="text-[10px] text-slate-400 mt-0.5">多路并行处理引擎已锁定</span>
           </div>
         </div>
       </div>
