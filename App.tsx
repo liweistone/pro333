@@ -49,7 +49,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
               </div>
               <div>
                 <h2 className="text-3xl font-black text-white tracking-tight">API 配置管理</h2>
-                <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Unified Apimart Gateway</p>
+                <p className="text-[12px] text-blue-400 font-bold uppercase tracking-widest mt-1">Unified Apimart Gateway</p>
               </div>
             </div>
             <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-full transition-all text-slate-400 hover:text-white group">
@@ -60,7 +60,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
           <div className="space-y-8">
             <div className="space-y-4">
               <label className="text-sm font-black text-blue-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
-                <Key className="w-5 h-5" /> Apimart 智造密钥 (MASTER API KEY)
+                <Key className="w-5 h-5" /> 智造密钥 (API KEY)
               </label>
               <input 
                 type="password" 
@@ -71,7 +71,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
               />
               <div className="flex items-center gap-2 px-2">
                  <Globe className="w-3 h-3 text-emerald-500" />
-                 <span className="text-[10px] text-slate-400 font-bold uppercase">一个密钥即可解锁分析、绘图、视频全站功能</span>
+                 <span className="text-[12px] text-slate-400 font-bold uppercase">一个密钥即可解锁分析、绘图、视频全站功能</span>
               </div>
             </div>
           </div>
@@ -181,7 +181,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
             </div>
             <div className="flex items-center gap-2 mb-6">
                 <h2 className="text-3xl font-black text-white tracking-tight">智拍大师 Pro</h2>
-                <span className="bg-cyan-500 text-[10px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">旗舰版</span>
+                <span className="bg-cyan-500 text-[12px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">旗舰版</span>
             </div>
             <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-12 font-medium w-full">
               深度 3D 动力学引擎。支持骨骼级姿态重塑、虚拟布光、身材管理与资产级智能换装。
