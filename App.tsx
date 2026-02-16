@@ -9,7 +9,9 @@ import App6LumiFluxApp from './app6/App';
 import App7PresetHub from './app7/App';
 import App8CorrectApp from './app8/App';
 import App9LumiereStation from './app9/App';
-import { LayoutGrid, Sparkles, ArrowRight, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2, Zap, Database, PencilLine, Globe, Home, Camera, MonitorPlay, ShoppingBag } from 'lucide-react';
+import App10VisionDirector from './app10/App';
+import App11CNYStation from './app11/App'; // New Import
+import { LayoutGrid, Sparkles, ArrowRight, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2, Zap, Database, PencilLine, Globe, Home, Camera, MonitorPlay, ShoppingBag, Clapperboard, CalendarHeart } from 'lucide-react';
 import { saveUserKeys, clearUserKeys } from './apiConfig';
 
 const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatusChange: () => void }> = ({ isOpen, onClose, onStatusChange }) => {
@@ -97,7 +99,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
   );
 };
 
-const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct' | 'station') => void }> = ({ onSelect }) => {
+const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct' | 'station' | 'director' | 'cny') => void }> = ({ onSelect }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hasCustomKey, setHasCustomKey] = useState(false);
 
@@ -110,7 +112,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
     checkKeys();
   }, []);
 
-  const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct' | 'station') => {
+  const handleCardClick = (type: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct' | 'station' | 'director' | 'cny') => {
     if (type !== 'presets' && !hasCustomKey) {
         setIsSettingsOpen(true);
         return;
@@ -141,7 +143,6 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
       <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[60%] bg-blue-600/15 blur-[150px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 blur-[150px] rounded-full pointer-events-none"></div>
 
-      {/* 重大更新：text-left 改为 text-center 以支持居中 */}
       <div className="max-w-7xl mx-auto w-full z-10 px-6 py-24 md:py-32 space-y-24 animate-in fade-in zoom-in-95 duration-1000 text-center">
         <div className="space-y-8 flex flex-col items-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-[0.4em] mb-4">
@@ -150,7 +151,6 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
           <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter leading-none">
             BatchMaster <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">Pro</span>
           </h1>
-          {/* 副标题通过 mx-auto 和 text-center 实现完美居中 */}
           <p className="text-slate-400 text-xl md:text-2xl max-w-3xl mx-auto font-medium leading-relaxed opacity-80 text-center">
             万象智造：赋能每一位电商人的 AI 全能级视觉工作站。
           </p>
@@ -158,13 +158,29 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           
-          {/* D1 预设灵感库 - 始终首位，样式加重 */}
           <button onClick={() => handleCardClick('presets')} className="group relative flex flex-col p-10 rounded-[48px] bg-slate-900 border-2 border-violet-500 shadow-[0_0_50px_rgba(139,92,246,0.3)] hover:-translate-y-4 transition-all duration-700 backdrop-blur-xl overflow-hidden text-left">
             <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/20 blur-[80px] -mr-32 -mt-32"></div>
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center border-2 bg-violet-500/20 border-violet-500/30 text-violet-400 mb-8 shadow-xl"><Database className="w-8 h-8" /></div>
             <h2 className="text-2xl font-black text-white tracking-tight mb-4">D1 预设灵感库</h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-8">云端灵感中心。为视频创作注入灵魂，精选数千组商业级提示词，一键同步全球顶尖方案。</p>
             <div className="mt-auto flex items-center gap-2 font-black text-xs uppercase tracking-widest text-violet-400 group-hover:gap-4 transition-all">探索预设 <ArrowRight className="w-4 h-4" /></div>
+          </button>
+
+          {/* New App11 CNY Special */}
+          <button onClick={() => handleCardClick('cny')} className="group relative flex flex-col p-10 rounded-[48px] bg-slate-900 border-2 border-rose-600 shadow-[0_0_50px_rgba(225,29,72,0.3)] hover:-translate-y-4 transition-all duration-700 backdrop-blur-xl overflow-hidden text-left">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/20 blur-[80px] -mr-32 -mt-32"></div>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center border-2 bg-rose-600 border-rose-500 text-white mb-8 shadow-xl"><CalendarHeart className="w-8 h-8" /></div>
+            <h2 className="text-2xl font-black text-white tracking-tight mb-4">马年贺岁站</h2>
+            <p className="text-slate-400 text-sm leading-relaxed mb-8">2026马年贺岁专项。AI 导演自动生成 11 天春节日历全套海报方案，一键开启节日大促生产线。</p>
+            <div className="mt-auto flex items-center gap-2 font-black text-xs uppercase tracking-widest text-rose-500 group-hover:gap-4 transition-all">进入分会场 <ArrowRight className="w-4 h-4" /></div>
+          </button>
+
+          <button onClick={() => handleCardClick('director')} className="group relative flex flex-col p-10 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-rose-500 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 overflow-hidden text-left">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/10 blur-[80px] -mr-32 -mt-32"></div>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center border bg-rose-500/10 border-rose-500/20 text-rose-400 mb-8 shadow-xl"><Clapperboard className="w-8 h-8" /></div>
+            <h2 className="text-2xl font-black text-white tracking-tight mb-4">万象视觉导演</h2>
+            <p className="text-slate-400 text-sm leading-relaxed mb-8">图生图裂变引擎。深度解构视觉基因，一键生成 9 组电影级分镜画面。</p>
+            <div className="mt-auto flex items-center gap-2 font-black text-xs uppercase tracking-widest text-rose-400 group-hover:gap-4 transition-all">启动拍摄 <ArrowRight className="w-4 h-4" /></div>
           </button>
 
           <button onClick={() => handleCardClick('station')} className="group relative flex flex-col p-10 rounded-[48px] bg-slate-900/40 border border-slate-800 hover:border-cyan-500 transition-all duration-700 backdrop-blur-xl hover:-translate-y-4 overflow-hidden text-left">
@@ -240,7 +256,7 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct' | 'station'>('launcher');
+  const [view, setView] = useState<'launcher' | 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct' | 'station' | 'director' | 'cny'>('launcher');
   const [stationPrefill, setStationPrefill] = useState<{ prompt: string; image: string } | null>(null);
 
   const handleUsePreset = (data: { prompt: string; image: string }) => {
@@ -258,6 +274,8 @@ const App: React.FC = () => {
       case 'presets': return <App7PresetHub onUsePreset={handleUsePreset} />;
       case 'correct': return <App8CorrectApp />;
       case 'station': return <App9LumiereStation />;
+      case 'director': return <App10VisionDirector />;
+      case 'cny': return <App11CNYStation />;
       default: return <Launcher onSelect={setView} />;
     }
   };
