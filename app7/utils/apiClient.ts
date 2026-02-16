@@ -1,4 +1,11 @@
+
 // app7/utils/apiClient.ts
+
+// Define Fetcher type for Cloudflare environment if not globally available
+export interface Fetcher {
+  fetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
+}
+
 interface CloudflareEnv {
   CLOUDFLARE_WEBSITE: Fetcher;
 }
@@ -6,23 +13,25 @@ interface CloudflareEnv {
 export const createPresetApiClient = (env?: CloudflareEnv) => {
   // 确定基础 URL
   const getBaseUrl = () => {
-    // 检测是否在 Node.js 环境中
-    const isNodeEnv = typeof process !== 'undefined' && process.versions && process.versions.node;
+    // 安全地检测是否在 Node.js 环境中，避免在浏览器中报错
+    const isNodeEnv = typeof process !== 'undefined' && 
+                      (process as any).versions != null && 
+                      (process as any).versions.node != null;
     
     if (typeof window !== 'undefined') {
       // 浏览器环境
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        // 开发环境，使用您提供的 cloudflare-website URL
-        return 'https://cloudflare-website.liwei791214.workers.dev'; // 使用您提供的 Workers 域名
+        // 开发环境
+        return 'https://cloudflare-website.liwei791214.workers.dev'; 
       } else {
         // 生产环境，直接使用相对路径
         return '';
       }
     } else if (isNodeEnv) {
-      // Node.js 环境，使用您提供的 cloudflare-website URL
+      // Node.js 环境
       return 'https://cloudflare-website.liwei791214.workers.dev';
     } else {
-      // 服务端环境（如果适用）
+      // 其他环境
       return '';
     }
   };
@@ -37,9 +46,7 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
         let fetchPromise;
         
         if (env) {
-          // 在 Cloudflare Pages 环境中直接使用服务绑定
           url = '/api/presets/categories';
-          console.log('使用服务绑定调用:', url);
           fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(url, {
             headers: {
               'Accept': 'application/json',
@@ -47,9 +54,7 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
             }
           });
         } else {
-          // 在浏览器或Node.js环境中使用完整的 URL
           url = `${baseUrl}/api/presets/categories`;
-          console.log('使用浏览器/Node.js环境调用:', url);
           fetchPromise = fetch(url, {
             headers: {
               'Accept': 'application/json',
@@ -60,15 +65,8 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
         
         const response = await fetchPromise;
         
-        // 检查响应是否为 JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('API调用错误 - 非JSON响应:', text.substring(0, 200));
-          // 如果响应是HTML，检查是否包含常见HTML标签
-          if (text.includes('<!DOCTYPE html') || text.includes('<html') || text.includes('<head')) {
-            throw new Error(`API端点返回HTML而非JSON，请检查API端点是否正确或服务是否可用。状态码: ${response.status}`);
-          }
           throw new Error(`API返回非JSON数据，状态码: ${response.status}`);
         }
         
@@ -91,8 +89,6 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
         
         let fetchPromise;
         if (env) {
-          console.log('使用服务绑定调用:', url);
-          // 对于服务绑定，我们仍然使用相对路径
           const relativePath = url.replace(baseUrl, '');
           fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(relativePath, {
             headers: {
@@ -101,7 +97,6 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
             }
           });
         } else {
-          console.log('使用浏览器/Node.js环境调用:', url);
           fetchPromise = fetch(url, {
             headers: {
               'Accept': 'application/json',
@@ -112,15 +107,8 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
         
         const response = await fetchPromise;
         
-        // 检查响应是否为 JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('API调用错误 - 非JSON响应:', text.substring(0, 200));
-          // 如果响应是HTML，检查是否包含常见HTML标签
-          if (text.includes('<!DOCTYPE html') || text.includes('<html') || text.includes('<head')) {
-            throw new Error(`API端点返回HTML而非JSON，请检查API端点是否正确或服务是否可用。状态码: ${response.status}`);
-          }
           throw new Error(`API返回非JSON数据，状态码: ${response.status}`);
         }
         
@@ -133,7 +121,6 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
         
         let fetchPromise;
         if (env) {
-          console.log('使用服务绑定调用预设详情:', url);
           const relativePath = url.replace(baseUrl, '');
           fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(relativePath, {
             headers: {
@@ -142,7 +129,6 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
             }
           });
         } else {
-          console.log('使用浏览器/Node.js环境调用预设详情:', url);
           fetchPromise = fetch(url, {
             headers: {
               'Accept': 'application/json',
@@ -153,152 +139,71 @@ export const createPresetApiClient = (env?: CloudflareEnv) => {
         
         const response = await fetchPromise;
         
-        // 检查响应是否为 JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('API调用错误 - 非JSON响应:', text.substring(0, 200));
-          // 如果响应是HTML，检查是否包含常见HTML标签
-          if (text.includes('<!DOCTYPE html') || text.includes('<html') || text.includes('<head')) {
-            throw new Error(`API端点返回HTML而非JSON，请检查API端点是否正确或服务是否可用。状态码: ${response.status}`);
-          }
           throw new Error(`API返回非JSON数据，状态码: ${response.status}`);
         }
         
         return response;
       },
       
-      // 收藏预设
+      // 收藏
       favorite: async (id: string, token: string) => {
         const url = `${baseUrl}/api/presets/${id}/favorite`;
-        
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        };
+
         let fetchPromise;
         if (env) {
-          console.log('使用服务绑定调用收藏:', url);
           const relativePath = url.replace(baseUrl, '');
-          fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(relativePath, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          });
+          fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(relativePath, { method: 'POST', headers });
         } else {
-          console.log('使用浏览器/Node.js环境调用收藏:', url);
-          fetchPromise = fetch(url, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          });
+          fetchPromise = fetch(url, { method: 'POST', headers });
         }
         
-        const response = await fetchPromise;
-        
-        // 检查响应是否为 JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('API调用错误 - 非JSON响应:', text.substring(0, 200));
-          // 如果响应是HTML，检查是否包含常见HTML标签
-          if (text.includes('<!DOCTYPE html') || text.includes('<html') || text.includes('<head')) {
-            throw new Error(`API端点返回HTML而非JSON，请检查API端点是否正确或服务是否可用。状态码: ${response.status}`);
-          }
-          throw new Error(`API返回非JSON数据，状态码: ${response.status}`);
-        }
-        
-        return response;
+        return await fetchPromise;
       },
       
       // 取消收藏
       unfavorite: async (id: string, token: string) => {
         const url = `${baseUrl}/api/presets/${id}/favorite`;
-        
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        };
+
         let fetchPromise;
         if (env) {
-          console.log('使用服务绑定调用取消收藏:', url);
           const relativePath = url.replace(baseUrl, '');
-          fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(relativePath, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          });
+          fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(relativePath, { method: 'DELETE', headers });
         } else {
-          console.log('使用浏览器/Node.js环境调用取消收藏:', url);
-          fetchPromise = fetch(url, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          });
+          fetchPromise = fetch(url, { method: 'DELETE', headers });
         }
         
-        const response = await fetchPromise;
-        
-        // 检查响应是否为 JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('API调用错误 - 非JSON响应:', text.substring(0, 200));
-          // 如果响应是HTML，检查是否包含常见HTML标签
-          if (text.includes('<!DOCTYPE html') || text.includes('<html') || text.includes('<head')) {
-            throw new Error(`API端点返回HTML而非JSON，请检查API端点是否正确或服务是否可用。状态码: ${response.status}`);
-          }
-          throw new Error(`API返回非JSON数据，状态码: ${response.status}`);
-        }
-        
-        return response;
+        return await fetchPromise;
       },
       
-      // 记录预设使用
+      // 记录使用
       recordUse: async (id: string) => {
         const url = `${baseUrl}/api/presets/${id}/use`;
-        
+        const headers = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        };
+
         let fetchPromise;
         if (env) {
-          console.log('使用服务绑定调用记录使用:', url);
           const relativePath = url.replace(baseUrl, '');
-          fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(relativePath, {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          });
+          fetchPromise = env.CLOUDFLARE_WEBSITE.fetch(relativePath, { method: 'POST', headers });
         } else {
-          console.log('使用浏览器/Node.js环境调用记录使用:', url);
-          fetchPromise = fetch(url, {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          });
+          fetchPromise = fetch(url, { method: 'POST', headers });
         }
         
-        const response = await fetchPromise;
-        
-        // 检查响应是否为 JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('API调用错误 - 非JSON响应:', text.substring(0, 200));
-          // 如果响应是HTML，检查是否包含常见HTML标签
-          if (text.includes('<!DOCTYPE html') || text.includes('<html') || text.includes('<head')) {
-            throw new Error(`API端点返回HTML而非JSON，请检查API端点是否正确或服务是否可用。状态码: ${response.status}`);
-          }
-          throw new Error(`API返回非JSON数据，状态码: ${response.status}`);
-        }
-        
-        return response;
+        return await fetchPromise;
       }
     }
   };

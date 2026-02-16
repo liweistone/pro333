@@ -6,14 +6,14 @@ import React from 'react';
 declare global {
   namespace JSX {
     interface IntrinsicElements extends ThreeElements {
-      [elemName: string]: any;
+      // Removed duplicate index signature
     }
   }
   // Support for React 18+ and various TypeScript configurations where JSX might be nested under React
   namespace React {
     namespace JSX {
       interface IntrinsicElements extends ThreeElements {
-        [elemName: string]: any;
+        // Removed duplicate index signature
       }
     }
   }

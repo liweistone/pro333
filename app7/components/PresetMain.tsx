@@ -1,5 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { initializePresetService, getPresetService } from '../services/presetService';
+
+// Define Fetcher locally to ensure compilation without global types
+type Fetcher = {
+  fetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
+};
 
 interface CloudflareEnv {
   CLOUDFLARE_WEBSITE: Fetcher;
