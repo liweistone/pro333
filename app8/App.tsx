@@ -12,7 +12,8 @@ const App: React.FC = () => {
   const [promptsText, setPromptsText] = useState('');
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
-    imageSize: ImageSize.K1
+    imageSize: ImageSize.K1,
+    model: 'gemini-3-pro-image-preview'
   });
   const [batchImages, setBatchImages] = useState<string[]>([]);
   const [fixedImage, setFixedImage] = useState<string | null>(null);

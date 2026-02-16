@@ -14,7 +14,7 @@ export class ImageAdapter {
   
   /**
    * 创建图像生成任务
-   * 核心修复：强制使用 gemini-3-pro-image-preview，防止透传旧的 nano 标识符导致 API 报错
+   * 核心修复：强制使用 gemini-2.5-flash-image-preview (Flash模型) 以节省成本
    */
   async createGenerationTask(
     prompt: string,

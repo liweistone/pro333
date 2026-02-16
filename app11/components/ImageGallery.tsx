@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { GeneratedImage } from '../types';
+import { GeneratedImage, AspectRatio } from '../types';
 import { Eye, Download, RefreshCcw, AlertCircle, CheckCircle2, ImageIcon } from 'lucide-react';
 
 interface ImageGalleryProps {
@@ -16,16 +15,15 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
     setDownloadingId(item.id);
     try {
       const response = await fetch(item.url);
-      // Added type cast to Blob to fix 'unknown' type error during fetch result processing
-      const blob = (await response.blob()) as Blob;
+      const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
       
       // 生成友好的文件名
       const safePrompt = item.prompt.slice(0, 15).replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '-');
       const fileName = `grsai-${safePrompt}-${item.id.slice(-4)}.png`;
       
-      const link = document.createElement('a');
-      link.href = blobUrl;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
@@ -40,6 +38,26 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
     }
   };
 
+  /**
+   * 根据任务的比例获取 Tailwind Aspect Ratio 类
+   */
+  const getAspectRatioClass = (ratio?: AspectRatio) => {
+    switch (ratio) {
+      case AspectRatio.SQUARE: return 'aspect-square';
+      case AspectRatio.PORTRAIT_16_9: return 'aspect-[9/16]';
+      case AspectRatio.LANDSCAPE_16_9: return 'aspect-video';
+      case AspectRatio.PORTRAIT_4_3: return 'aspect-[3/4]';
+      case AspectRatio.LANDSCAPE_4_3: return 'aspect-[4/3]';
+      case AspectRatio.R_3_2: return 'aspect-[3/2]';
+      case AspectRatio.R_2_3: return 'aspect-[2/3]';
+      case AspectRatio.R_5_4: return 'aspect-[5/4]';
+      case AspectRatio.R_4_5: return 'aspect-[4/5]';
+      case AspectRatio.R_21_9: return 'aspect-[21/9]';
+      case AspectRatio.R_9_21: return 'aspect-[9/21]';
+      default: return 'aspect-square';
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {items.map((item) => (
@@ -47,8 +65,8 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
           key={item.id} 
           className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col"
         >
-          {/* 图像预览/加载区域 */}
-          <div className="relative aspect-square bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100">
+          {/* 图像预览/加载区域 - 使用动态比例 */}
+          <div className={`relative ${getAspectRatioClass(item.aspectRatio)} bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100`}>
             {(item.status === 'pending' || item.status === 'running') && (
               <div className="flex flex-col items-center gap-4 w-full px-8 text-center animate-pulse">
                 {/* 环形进度显示 */}
@@ -117,7 +135,8 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
                 <img 
                   src={item.url} 
                   alt={item.prompt} 
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                  // 使用 object-contain 确保不被裁剪，配合容器比例实现完美适配
+                  className="w-full h-full object-contain transition-transform duration-1000 group-hover:scale-105"
                   loading="lazy"
                 />
                 {/* 悬停遮罩 */}
