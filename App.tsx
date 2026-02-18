@@ -10,9 +10,12 @@ import App7PresetHub from './app7/App';
 import App8CorrectApp from './app8/App';
 import App9LumiereStation from './app9/App';
 import App10VisionDirector from './app10/App';
-import App11CNYStation from './app11/App'; // New Import
-import { LayoutGrid, Sparkles, ArrowRight, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2, Zap, Database, PencilLine, Globe, Home, Camera, MonitorPlay, ShoppingBag, Clapperboard, CalendarHeart } from 'lucide-react';
+import App11CNYStation from './app11/App'; 
+import { LayoutGrid, Sparkles, ArrowRight, Settings, X, ShieldCheck, Key, CheckCircle2, BookOpen, AlertTriangle, Palette, BrainCircuit, Wand2, Zap, Database, PencilLine, Globe, Home, Camera, MonitorPlay, ShoppingBag, Clapperboard, CalendarHeart, Crown } from 'lucide-react';
 import { saveUserKeys, clearUserKeys } from './apiConfig';
+import { GiftEntry } from './free_trial/GiftEntry';
+import { TrialModal } from './free_trial/TrialModal';
+import { PricingModal } from './subscription/PricingModal';
 
 const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatusChange: () => void }> = ({ isOpen, onClose, onStatusChange }) => {
   const [apiKey, setApiKey] = useState('');
@@ -63,7 +66,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
 
           <div className="space-y-8">
             <div className="space-y-4">
-              <label className="text-sm font-black text-blue-400 uppercase tracking-[0.25em] flex items-center gap-3 ml-1">
+              <label className="text-sm font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-3 ml-1">
                 <Key className="w-5 h-5" /> 万象智造密钥 (API KEY)
               </label>
               <input 
@@ -101,6 +104,8 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
 
 const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' | 'refine' | 'lumi' | 'presets' | 'correct' | 'station' | 'director' | 'cny') => void }> = ({ onSelect }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isTrialOpen, setIsTrialOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [hasCustomKey, setHasCustomKey] = useState(false);
 
   const checkKeys = () => {
@@ -122,6 +127,28 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col relative overflow-x-hidden">
+      
+      {/* 免费试用入口 */}
+      {!hasCustomKey && (
+        <GiftEntry onClick={() => setIsTrialOpen(true)} />
+      )}
+
+      {/* 弹窗组件 */}
+      <TrialModal 
+        isOpen={isTrialOpen}
+        onClose={() => setIsTrialOpen(false)}
+        onSuccess={() => {
+          setIsTrialOpen(false);
+          checkKeys();
+        }}
+      />
+      
+      <PricingModal 
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+      />
+
+      {/* 顶部导航 */}
       <div className="fixed top-8 right-8 z-50 flex items-center gap-4">
         {!hasCustomKey && (
             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-full animate-in slide-in-from-right-4 duration-500">
@@ -129,6 +156,15 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
                 <span className="text-xs font-black text-red-500 uppercase tracking-widest">请配置密钥解锁功能</span>
             </div>
         )}
+        
+        {/* Upgrade Button */}
+        <button 
+          onClick={() => setIsPricingOpen(true)}
+          className="hidden md:flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 rounded-full font-black text-xs uppercase tracking-widest shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:scale-105 active:scale-95 transition-all"
+        >
+           <Crown className="w-4 h-4" /> 升级会员
+        </button>
+
         <button 
             onClick={() => setIsSettingsOpen(true)}
             className={`p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-slate-300 hover:text-white transition-all group active:scale-90 relative ${!hasCustomKey ? 'animate-breathe shadow-[0_0_30px_rgba(59,130,246,0.3)]' : ''}`}
@@ -154,6 +190,14 @@ const Launcher: React.FC<{ onSelect: (view: 'pro' | 'batch' | 'poster' | 'ecom' 
           <p className="text-slate-400 text-xl md:text-2xl max-w-3xl mx-auto font-medium leading-relaxed opacity-80 text-center">
             万象智造：赋能每一位电商人的 AI 全能级视觉工作站。
           </p>
+          
+          {/* Mobile Upgrade Button */}
+          <button 
+            onClick={() => setIsPricingOpen(true)}
+            className="md:hidden flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 rounded-full font-black text-sm uppercase tracking-widest shadow-lg mt-8"
+          >
+             <Crown className="w-5 h-5" /> 升级会员 / 充值
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
