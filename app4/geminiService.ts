@@ -1,3 +1,4 @@
+
 import { AspectRatio, ImageSize, AppResponse, MarketAnalysis } from "./types";
 import { MultimodalAdapter } from "../services/adapters/multimodalAdapter";
 import { ImageAdapter } from "../services/adapters/imageAdapter";
@@ -5,51 +6,85 @@ import { ImageAdapter } from "../services/adapters/imageAdapter";
 const multimodalAdapter = new MultimodalAdapter();
 const imageAdapter = new ImageAdapter();
 
-const extractAndMapResponse = (rawText: string): AppResponse => {
-  let json: any = {};
-  try {
-    let cleaned = rawText.trim();
-    cleaned = cleaned.replace(/^```[a-z]*\n/i, "").replace(/\n```$/i, "");
-    const startIdx = cleaned.indexOf('{');
-    const endIdx = cleaned.lastIndexOf('}');
-    if (startIdx !== -1 && endIdx !== -1) {
-      json = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
-    } else {
-      throw new Error("未能识别有效的 JSON 结构");
-    }
-  } catch (e) {
-    throw new Error("分析引擎数据格式异常，请重试");
-  }
+const SYSTEM_PROMPT = `You are a top-tier E-commerce Strategist and Creative Director.
+Your task is to analyze the provided product information and generate a comprehensive market strategy and visual content plan.
 
-  const data = json.analysis || {};
+CRITICAL: Return strictly valid JSON. Do not use Markdown code blocks.
+
+JSON Structure:
+{
+  "analysis": {
+    "userPersona": "Target user description",
+    "psychologicalProfile": "Deep psychological driver analysis",
+    "explicitNeeds": ["Need 1", "Need 2"],
+    "painPoints": ["Pain point 1", "Pain point 2"],
+    "bottomLogic": "The underlying logic of how the product creates value",
+    "productSellingPoints": ["USP 1", "USP 2"],
+    "consumerBuyingPoints": ["Buying point 1", "Buying point 2"],
+    "usageScenarios": ["Scenario 1", "Scenario 2"],
+    "emotionalValue": "Emotional value proposition",
+    "emotionalScenarios": [
+      { "title": "Scenario Title", "desc": "Description", "emotion": "Emotion Keyword" }
+    ],
+    "swot": {
+      "strengths": [],
+      "weaknesses": [],
+      "opportunities": [],
+      "threats": []
+    },
+    "marketingScripts": ["Short video script idea 1", "Idea 2"],
+    "marketingSOP": "Standard Operating Procedure overview for marketing",
+    "salesChannels": [
+      { "channel": "Channel Name", "desc": "Channel Strategy" }
+    ],
+    "promotionTactics": ["Tactic 1", "Tactic 2"]
+  },
+  "painPointPrompts": {
+    "category": "Pain Point Visuals",
+    "prompts": [
+      { "planTitle": "Visual Title", "fullPrompt": "Detailed AI image generation prompt (English)" }
+    ]
+  },
+  "scenarioPrompts": [
+    {
+      "category": "Usage Scenario Visuals",
+      "prompts": [
+        { "planTitle": "Visual Title", "fullPrompt": "Detailed AI image generation prompt (English)" }
+      ]
+    }
+  ]
+}`;
+
+const normalizeResponse = (data: any): AppResponse => {
+  const analysisData = data?.analysis || {};
   
   const mappedAnalysis: MarketAnalysis = {
-    userPersona: data.userPersona || "目标电商用户",
-    psychologicalProfile: data.psychologicalProfile || "暂无深度心理画像",
-    explicitNeeds: Array.isArray(data.explicitNeeds) ? data.explicitNeeds : [],
-    painPoints: Array.isArray(data.painPoints) ? data.painPoints : ["未提取到痛点"],
-    bottomLogic: data.bottomLogic || "暂无底层逻辑拆解",
-    productSellingPoints: Array.isArray(data.productSellingPoints) ? data.productSellingPoints : [],
-    consumerBuyingPoints: Array.isArray(data.consumerBuyingPoints) ? data.consumerBuyingPoints : [],
-    usageScenarios: Array.isArray(data.usageScenarios) ? data.usageScenarios : [],
-    emotionalScenarios: Array.isArray(data.emotionalScenarios) ? data.emotionalScenarios : [],
-    emotionalValue: data.emotionalValue || "",
+    userPersona: analysisData.userPersona || "Target User",
+    psychologicalProfile: analysisData.psychologicalProfile || "Pending Analysis",
+    explicitNeeds: Array.isArray(analysisData.explicitNeeds) ? analysisData.explicitNeeds : [],
+    painPoints: Array.isArray(analysisData.painPoints) ? analysisData.painPoints : ["No pain points identified"],
+    bottomLogic: analysisData.bottomLogic || "N/A",
+    productSellingPoints: Array.isArray(analysisData.productSellingPoints) ? analysisData.productSellingPoints : [],
+    consumerBuyingPoints: Array.isArray(analysisData.consumerBuyingPoints) ? analysisData.consumerBuyingPoints : [],
+    usageScenarios: Array.isArray(analysisData.usageScenarios) ? analysisData.usageScenarios : [],
+    emotionalScenarios: Array.isArray(analysisData.emotionalScenarios) ? analysisData.emotionalScenarios : [],
+    emotionalValue: analysisData.emotionalValue || "",
     swot: {
-      strengths: Array.isArray(data.swot?.strengths) ? data.swot.strengths : [],
-      weaknesses: Array.isArray(data.swot?.weaknesses) ? data.swot.weaknesses : [],
-      opportunities: Array.isArray(data.swot?.opportunities) ? data.swot.opportunities : [],
-      threats: Array.isArray(data.swot?.threats) ? data.swot.threats : []
+      strengths: Array.isArray(analysisData.swot?.strengths) ? analysisData.swot.strengths : [],
+      weaknesses: Array.isArray(analysisData.swot?.weaknesses) ? analysisData.swot.weaknesses : [],
+      opportunities: Array.isArray(analysisData.swot?.opportunities) ? analysisData.swot.opportunities : [],
+      threats: Array.isArray(analysisData.swot?.threats) ? analysisData.swot.threats : []
     },
-    marketingScripts: Array.isArray(data.marketingScripts) ? data.marketingScripts : [],
-    marketingSOP: data.marketingSOP || "",
-    salesChannels: Array.isArray(data.salesChannels) ? data.salesChannels : [],
-    promotionTactics: Array.isArray(data.promotionTactics) ? data.promotionTactics : []
+    marketingScripts: Array.isArray(analysisData.marketingScripts) ? analysisData.marketingScripts : [],
+    marketingSOP: analysisData.marketingSOP || "",
+    salesChannels: Array.isArray(analysisData.salesChannels) ? analysisData.salesChannels : [],
+    promotionTactics: Array.isArray(analysisData.promotionTactics) ? analysisData.promotionTactics : []
   };
 
   return {
     analysis: mappedAnalysis,
-    painPointPrompts: json.painPointPrompts || { category: "痛点视觉", prompts: [] },
-    scenarioPrompts: Array.isArray(json.scenarioPrompts) ? json.scenarioPrompts : []
+    painPointPrompts: data.painPointPrompts || { category: "Pain Points", prompts: [] },
+    scenarioPrompts: Array.isArray(data.scenarioPrompts) ? data.scenarioPrompts : []
   };
 };
 
@@ -85,12 +120,18 @@ export const checkTaskStatus = async (taskId: string): Promise<any> => {
   }
 };
 
-//6. 提示词生成：针对痛点和场景，生成至少 10 组高质量 AI 绘图 Prompt（fullPrompt）。
+// 6. 提示词生成：针对痛点和场景，生成至少 10 组高质量 AI 绘图 Prompt（fullPrompt）。
 export const generatePlan = async (productSpecs: string, imageBase64?: string): Promise<AppResponse> => {
   try {
-    const result = await multimodalAdapter.generatePlan(productSpecs, imageBase64);
-    return result;
+    const result = await multimodalAdapter.generateStructuredContent({
+      systemInstruction: SYSTEM_PROMPT,
+      prompt: `Product Specs / Context:\n${productSpecs}`,
+      schema: null,
+      images: imageBase64 ? [imageBase64] : [],
+      model: 'gemini-3-pro-preview'
+    });
+    return normalizeResponse(result);
   } catch (error: any) {
-    throw new Error(`分析引擎异常: ${error.message}`);
+    throw new Error(`Strategy Engine Error: ${error.message}`);
   }
 };
