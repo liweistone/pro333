@@ -4,8 +4,10 @@ import { ApimartProvider } from '@/services/providers/apimartProvider';
 const provider = new ApimartProvider();
 
 export const extractTextFromImage = async (model: string, imageUrl: string) => {
+  // 强制使用最新指定的分析模型
   const targetModel = 'gemini-3-pro-preview';
   const res = await provider.analyzeWithMultimodal("请提取海报中的核心文案，直接输出文本。", imageUrl, targetModel);
+  // 适配包装和非包装结构
   const data = res.data || res;
   return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 };
@@ -26,25 +28,17 @@ export const identifyVisualElements = async (model: string, imageUrl: string) =>
 
 export const analyzePoster = async (model: string, styleImage: string, assets: any[], copyText: string) => {
   const targetModel = 'gemini-3-pro-preview';
-  
-  // 核心修正：从“描述布局”升级为“强制内容覆盖”指令
-  const prompt = `你是一个顶级创意总监和视觉营销排版专家。
-任务：将指定的文案方案硬核注入到原型图布局中，为绘图引擎生成一份“内容优先”的视觉指令。
+  const prompt = `你是一个顶级海报重构助手。
+海报原型：[海报图像]
+已准备好的替换资产：${JSON.stringify(assets.map(a => a.name))}
+文案：${copyText}
 
-指令逻辑：
-1. 文案方案强制呈现：请识别原型图中文字占位符（大标题、副标题、正文块、底部标签）。在提示词中明确下令：在原图[对应位置]处，使用[具体艺术字体]精准书写以下内容：“${copyText}”。
-2. 字体视觉特征工程：详细描述文字的艺术风格（如：黑体、书法体、艺术字等）、字重（超粗、极简细线）、颜色（如渐变、金属质感、反白）及其在 3D 空间或平面坐标系中的确切位置，必须输出字体名称或者对字体设计有所描述。
-3. 资产原位复刻描述：将新上传的资产 ${JSON.stringify(assets.map(a => a.name))}，按照原图主体的姿态、比例、遮挡关系及环境光影进行无缝替换描述，确保画面和谐统一。
-4. 渲染权重锚点：在生成的中文提示词中，必须在合适位置嵌入以下高权重英文指令，以强制绘图模型执行文字渲染：
-   - (exact legible text characters rendering:1.8)
-   - (perfect typography layout and design:1.6)
-   - (high-fidelity content injection:1.5)
-   - (original composition preservation:1.3)
-
-当前文案方案内容如下，请务必完整提取并注入：
-${copyText}
-
-请基于以上要求，输出一段极其专业、能够让 AI 绘图引擎实现“换图且精准换字”的纯中文提示词。`;
+任务：深度分析原型图的构图风格、视觉层次和色彩空间，生成一段极其详尽的 AI 绘图提示词。
+要求：
+1. 必须保留原图的整体构图逻辑。
+2. 精准描述资产如何完美融入原图场景，文字资产太最可能的融入原图场景。
+3. 强化品牌质感与商业摄影的灯光。
+4. 输出纯中文提示词。`;
 
   const res = await provider.analyzeWithMultimodal(prompt, styleImage, targetModel);
   const data = res.data || res;
@@ -52,23 +46,20 @@ ${copyText}
 };
 
 export const generatePoster = async (params: any) => {
-  const finalRatio = params.aspectRatio === 'auto' ? '1:1' : params.aspectRatio;
-
   return await provider.generateImage(params.prompt, {
     model: params.model,
-    aspectRatio: finalRatio,
-    size: finalRatio,
+    aspectRatio: params.aspectRatio,
     resolution: params.imageSize
   }, params.urls);
 };
 
 export const getResultById = async (id: string) => {
   const res = await provider.getTaskStatus(id);
-  // 鲁棒性映射：确保状态转换准确
+  // getTaskStatus 已在内部做了 res.data 解包
   return {
-    status: res.status === 'completed' ? 'succeeded' : (res.status === 'failed' ? 'failed' : 'running'),
-    progress: res.progress || 0,
+    status: res.status === 'completed' ? 'succeeded' : res.status === 'failed' ? 'failed' : 'running',
+    progress: res.progress,
     results: res.result?.images ? [{ url: res.result.images[0].url[0] }] : [],
-    failure_reason: res.error?.message || res.msg
+    failure_reason: res.error?.message
   };
 };
