@@ -1,4 +1,4 @@
-import { GenerationConfig } from "./types";
+import { AspectRatio, ImageSize, GenerationConfig } from "./types";
 import { ImageAdapter } from "../services/adapters/imageAdapter";
 import { TaskAdapter } from "../services/adapters/taskAdapter";
 
@@ -6,8 +6,7 @@ const imageAdapter = new ImageAdapter();
 const taskAdapter = new TaskAdapter();
 
 /**
- * 提交绘图任务到大项目统一绘图适配器
- * 自动处理 4K 权限与 Master Key 鉴权
+ * 提交绘图任务到统一AI服务
  */
 export const createGenerationTask = async (
   prompt: string, 
@@ -15,29 +14,42 @@ export const createGenerationTask = async (
   referenceImages: string[] = []
 ): Promise<string> => {
   try {
-    // 调用大项目 ImageAdapter，它内部已锁定为 gemini-3-pro-image-preview
-    return await imageAdapter.createGenerationTask(
+    const taskId = await imageAdapter.createGenerationTask(
       prompt,
       {
-        aspectRatio: config.aspectRatio,
-        imageSize: config.imageSize
+        model: 'gemini-3-pro-image-preview',
+        size: config.aspectRatio === AspectRatio.AUTO ? "1:1" : config.aspectRatio,
+        resolution: config.imageSize,
+        n: 1
       },
       referenceImages
     );
+
+    return taskId;
   } catch (error: any) {
-    console.error("Studio Pro Generation Submit Error:", error);
-    throw new Error(error.message || "绘图引擎启动失败，请检查配置");
+    console.error("Apimart Submit Error:", error);
+    throw new Error(error.message || "提交任务时发生未知错误");
   }
 };
 
 /**
- * 轮询查询任务结果 (对接到大项目统一 TaskAdapter)
+ * 轮询查询任务结果
  */
 export const checkTaskStatus = async (taskId: string): Promise<any> => {
   try {
-    return await imageAdapter.checkTaskStatus(taskId);
+    const status = await taskAdapter.getTaskStatus(taskId);
+    
+    return {
+      id: taskId,
+      status: status.status === 'completed' || status.status === 'succeeded' ? 'succeeded' : status.status,
+      progress: status.progress,
+      results: status.imageUrl ? 
+        [{ url: status.imageUrl }] : undefined,
+      failure_reason: status.error,
+      error: status.error
+    };
   } catch (error: any) {
-    console.error("Studio Pro Task Status Error:", error);
+    console.error("Apimart Result Error:", error);
     throw error;
   }
 };
