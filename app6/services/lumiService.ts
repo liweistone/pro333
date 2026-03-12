@@ -1,8 +1,8 @@
 import { LumiAnalysisResult, LumiConfig } from '../types';
-import { MultimodalAdapter } from '@/services/adapters/multimodalAdapter';
-import { ImageAdapter } from '@/services/adapters/imageAdapter';
-import { VideoAdapter } from '@/services/adapters/videoAdapter';
-import { TaskAdapter } from '@/services/adapters/taskAdapter';
+import { MultimodalAdapter } from 'services/adapters/multimodalAdapter';
+import { ImageAdapter } from 'services/adapters/imageAdapter';
+import { VideoAdapter } from 'services/adapters/videoAdapter';
+import { TaskAdapter } from 'services/adapters/taskAdapter';
 
 const multimodalAdapter = new MultimodalAdapter();
 const imageAdapter = new ImageAdapter();

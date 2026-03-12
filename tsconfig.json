@@ -21,6 +21,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "services/*": [
+        "./services/*"
       ]
     },
     "allowImportingTsExtensions": true,
