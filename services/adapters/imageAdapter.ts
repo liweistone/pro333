@@ -1,9 +1,8 @@
-
 import { ApimartProvider } from '../providers/apimartProvider';
 
 /**
  * 图像生成适配器
- * 适配原有图像生成功能到Apimart服务，强制统一模型名称
+ * 适配原有图像生成功能到Apimart服务，保持原有应用兼容性
  */
 export class ImageAdapter {
   private provider: ApimartProvider;
@@ -13,8 +12,7 @@ export class ImageAdapter {
   }
   
   /**
-   * 创建图像生成任务
-   * 核心修复：强制使用 gemini-3-pro-image-preview，防止透传旧的 nano 标识符导致 API 报错
+   * 创建图像生成任务（适配原有createGenerationTask接口）
    */
   async createGenerationTask(
     prompt: string,
@@ -23,11 +21,10 @@ export class ImageAdapter {
   ): Promise<string> {
     try {
       // 转换配置参数以匹配Apimart API格式
-      // 这里的 model 优先级被锁定，确保全站输出一致
       const imageConfig = {
-        size: config.aspectRatio || config.size || '1:1',
-        resolution: config.imageSize || config.resolution || '1K',
-        model: 'gemini-3-pro-image-preview' 
+        size: config.aspectRatio || '1:1',
+        resolution: config.imageSize || '1K',
+        model: config.model || 'gemini-3-pro-image-preview'
       };
       
       // 调用Apimart服务生成图像
@@ -44,7 +41,7 @@ export class ImageAdapter {
   }
   
   /**
-   * 检查任务状态
+   * 检查任务状态（适配原有checkTaskStatus接口）
    */
   async checkTaskStatus(taskId: string): Promise<any> {
     try {
@@ -76,7 +73,7 @@ export class ImageAdapter {
   }
   
   /**
-   * 生成增强型提示词
+   * 生成增强型提示词（适配app1的constructEnhancedPrompt功能）
    */
   async generateEnhancedImage(
     basePrompt: string,

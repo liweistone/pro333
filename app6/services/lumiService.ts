@@ -1,69 +1,139 @@
-
 import { LumiAnalysisResult, LumiConfig } from '../types';
-import { ApimartProvider } from '@/services/providers/apimartProvider';
+import { MultimodalAdapter } from '@/services/adapters/multimodalAdapter';
+import { ImageAdapter } from '@/services/adapters/imageAdapter';
+import { VideoAdapter } from '@/services/adapters/videoAdapter';
+import { TaskAdapter } from '@/services/adapters/taskAdapter';
 
-const provider = new ApimartProvider();
+const multimodalAdapter = new MultimodalAdapter();
+const imageAdapter = new ImageAdapter();
+const videoAdapter = new VideoAdapter();
+const taskAdapter = new TaskAdapter();
+
+/**
+ * 图像压缩工具
+ */
+const compressImage = (file: File, maxWidth = 1024): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxWidth) {
+          const ratio = Math.min(maxWidth / width, maxWidth / height);
+          width *= ratio;
+          height *= ratio;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas context failed'));
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+    };
+  });
+};
+
+const cleanAndParseJSON = (text: string): any => {
+  try {
+    let cleaned = text.replace(/<\/?think>/gi, '').trim();
+    cleaned = cleaned.replace(/```json/g, '').replace(/```/g, '').trim();
+    const startIdx = cleaned.indexOf('{');
+    const endIdx = cleaned.lastIndexOf('}');
+    if (startIdx === -1) return JSON.parse(cleaned);
+    return JSON.parse(cleaned.substring(startIdx, endIdx + 1));
+  } catch (e) {
+    throw new Error('解析视觉剧本失败，请尝试简化描述词');
+  }
+};
 
 export class LumiService {
   async analyzeProduct(file: File, instruction: string): Promise<LumiAnalysisResult> {
-    const reader = new FileReader();
-    const base64: string = await new Promise((resolve) => {
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
-    });
+    try {
+      const compressedBase64 = await compressImage(file);
+      
+      const systemPrompt = `你是一位工业设计视觉导演。分析图片中产品的物理结构，构思【内部流光特效】。
+      要求输出严格 JSON：{"reasoning":"中文分析见解","imagePrompt":"静态图英文指令","videoPrompt":"动态视频英文指令"}`;
 
-    const targetModel = 'gemini-3-pro-preview';
-    const prompt = `你是一位顶尖商业广告创意总监及光影动力学专家。
-任务：深度解析此产品的工业设计逻辑，并设计一套具有【生命感】和【流体感】的流光视觉方案。
+      const analysisResult = await multimodalAdapter.analyzeProduct(
+        `${systemPrompt}\n\n用户个性化需求：${instruction}`,
+        compressedBase64
+      );
 
-剧本设计规则：
-1. reasoning: 简述光束如何顺着产品的边缘、内部构造或材质缝隙进行物理运动。
-2. imagePrompt: 描述一帧静止但充满动感的高保真画面，包含光束的起始状态及周围环境的反射。
-3. videoPrompt: 【核心指令】禁止只描述静态光效。必须描述光随时间变化的轨迹和状态。
-   强制包含以下要素：
-   - 运动轨迹：(如：由底至顶的线性扫描、环绕机身的螺旋流光、从核心向外扩散的波纹)
-   - 物理状态：(如：脉冲式呼吸感、液态金属般的流动质感、高频微颤的电流)
-   - 渲染增强词：(liquid light flow:1.8), (dynamic cinematic lighting evolution:1.6), (trailing light particles:1.4)
-
-必须输出以下结构的纯 JSON 格式：
-{"reasoning": "...", "imagePrompt": "...", "videoPrompt": "..."}`;
-    
-    const res = await provider.analyzeWithMultimodal(`${prompt}\n用户具体需求：${instruction}`, base64, targetModel);
-    // 适配结果提取
-    const data = res.data || res;
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const jsonStr = content.replace(/```json/g, "").replace(/```/g, "").trim();
-    return JSON.parse(jsonStr);
+      // 直接使用返回的分析结果
+      return analysisResult;
+    } catch (error: any) {
+      console.error('Apimart 分析错误:', error);
+      throw new Error(error.message || 'AI 未返回有效剧本');
+    }
   }
 
   async generateAnchorImage(userInsight: string, originalFile: File): Promise<string> {
-    const reader = new FileReader();
-    const base64: string = await new Promise((resolve) => {
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(originalFile);
-    });
-
-    return await provider.generateImage(
-      `Commercial photography, high-end lighting, ${userInsight}`,
-      { model: 'gemini-3-pro-image-preview', resolution: '1K' },
-      [base64]
-    );
+    try {
+      const base64Data = await compressImage(originalFile, 1536);
+      
+      const taskId = await imageAdapter.createGenerationTask(
+        `PRODUCT PHOTOGRAPHY: ${userInsight}. Cinematic studio lighting, 8k.`,
+        {
+          model: 'gemini-3-pro-image-preview',
+          size: '1:1',
+          resolution: '1K'
+        },
+        [base64Data]
+      );
+      
+      return taskId || '';
+    } catch (error: any) {
+      console.error('Apimart 图像生成错误:', error);
+      throw new Error(error.message || '图像生成任务提交失败');
+    }
   }
 
   async generateLumiVideo(videoPrompt: string, anchorImageUrl: string, config: LumiConfig): Promise<string> {
-    return await provider.generateVideo(
-        videoPrompt,
-        { aspectRatio: config.aspectRatio, duration: 10 },
+    try {
+      const taskId = await videoAdapter.createVideoTask(
+        `Commercial product show, futuristic light flow. ${videoPrompt}`,
+        {
+          model: 'sora-2',
+          aspectRatio: config.aspectRatio,
+          duration: 10
+        },
         [anchorImageUrl]
-    );
+      );
+      
+      return taskId || '';
+    } catch (error: any) {
+      console.error('Apimart 视频生成错误:', error);
+      throw new Error(error.message || '视频生成任务提交失败');
+    }
   }
 
   async pollStatus(taskId: string, type: 'image' | 'video'): Promise<{status: string, url?: string, progress: number}> {
-    const res = await provider.getTaskStatus(taskId);
-    let url = undefined;
-    if (res.status === 'completed') {
-      url = type === 'image' ? res.result?.images?.[0]?.url?.[0] : res.result?.videos?.[0]?.url?.[0];
+    try {
+      const status = await taskAdapter.getTaskStatus(taskId);
+      
+      let url = undefined;
+      if (status.status === 'completed' || status.status === 'succeeded') {
+        url = type === 'image' ? status.imageUrl : status.videoUrl;
+      }
+      
+      return { 
+        status: status.status, 
+        progress: status.progress || 0, 
+        url 
+      };
+    } catch (error: any) {
+      console.error('获取任务状态错误:', error);
+      return { 
+        status: 'failed', 
+        progress: 0, 
+        url: undefined 
+      };
     }
-    return { status: res.status, progress: res.progress || 0, url };
   }
 }
