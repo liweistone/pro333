@@ -1,4 +1,3 @@
-
 export enum AspectRatio {
   AUTO = "auto",
   SQUARE = "1:1",
@@ -12,7 +11,8 @@ export enum AspectRatio {
   R_4_5 = "4:5",
   R_10_9 = "10:9",
   R_9_10 = "9:10",
-  R_21_9 = "21:9"
+  R_21_9 = "21:9",
+  R_9_21 = "9:21"
 }
 
 export enum ImageSize {
@@ -29,7 +29,6 @@ export interface GeneratedImage {
   progress: number;
   status: 'pending' | 'running' | 'succeeded' | 'failed' | 'error';
   error?: string;
-  aspectRatio?: AspectRatio;
 }
 
 export interface GenerationConfig {
@@ -38,39 +37,45 @@ export interface GenerationConfig {
   model: string;
 }
 
-// 深度市场分析接口 - 核心业务模型
+export interface GrsaiApiResponse {
+  code: number;
+  msg: string;
+  data: {
+    id: string;
+    results?: Array<{
+      url: string;
+      content: string;
+    }>;
+    progress?: number;
+    status?: 'running' | 'succeeded' | 'failed';
+    failure_reason?: string;
+    error?: string;
+  };
+}
+
+// 电商主图策划专家的类型定义
 export interface MarketAnalysis {
-  // 第一章：画像
-  userPersona: string; 
-  psychologicalProfile: string; // 深度心理画像
-  explicitNeeds: string[]; // 显性需求
-  painPoints: string[]; // 核心痛点
-  
-  // 第二章：逻辑
-  bottomLogic: string; // 底层机制逻辑
-  productSellingPoints: string[]; // 10大产品卖点
-  consumerBuyingPoints: string[]; // 10大消费者买点
-  usageScenarios: string[]; // 高频使用场景
-  
-  // 第三章：品牌与溢价
+  userPersona: string;
+  userNeeds: string[];
+  painPoints: string[];
+  usageScenarios: string[];
+  differentiation: string[];
   emotionalValue: string;
-  emotionalScenarios: { title: string; desc: string; emotion: string }[]; // 情绪溢价场景
-  
-  // 第四章：SWOT
   swot: {
     strengths: string[];
     weaknesses: string[];
     opportunities: string[];
     threats: string[];
   };
-  
-  // 第五章：新媒体
-  marketingScripts: string[]; // 脚本库
-  marketingSOP: string; // 执行SOP
-  
-  // 第六章：渠道
-  salesChannels: { channel: string; desc: string }[];
-  promotionTactics: string[]; // 促销战术
+  competitorWeakness: string;
+  marketingCopy: string[];
+  salesChannels: string[];
+  promotionStrategy: string;
+  newMediaPlan: {
+    content: string;
+    strategy: string;
+    tactic: string;
+  };
 }
 
 export interface PromptSet {
@@ -87,14 +92,8 @@ export interface AppResponse {
   scenarioPrompts: PromptSet[];
 }
 
-// Added missing exports for code optimization feature
-export enum OptimizationGoal {
-  CLEAN_CODE = "Clean Code",
-  PERFORMANCE = "Performance",
-  REFACTOR = "Refactor",
-  BUG_FIX = "Bug Fix",
-  TYPE_SAFETY = "Type Safety"
-}
+// Optimization types for code optimization service
+export type OptimizationGoal = 'performance' | 'readability' | 'maintainability' | 'modernization';
 
 export interface OptimizationResult {
   optimizedCode: string;
