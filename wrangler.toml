@@ -1,0 +1,54 @@
+name = "cloudflare-website"
+compatibility_date = "2023-12-01"
+
+# 环境变量
+[vars]
+# JWT密钥
+JWT_SECRET = "your-secure-jwt-secret-here"
+
+# 阿里云百炼API密钥
+DASHSCOPE_API_KEY = "YOUR_DASHSCOPE_API_KEY_HERE"
+
+# RunningHub配置
+RUNNINGHUB_API_KEY = "your-runninghub-api-key"
+RUNNINGHUB_WEBAPP_ID = "1959831828515467265"
+TEXT_TO_IMAGE_RUNNINGHUB_WEBAPP_ID = "1959831828515467265"
+TEXT_TO_VIDEO_RUNNINGHUB_WEBAPP_ID = "your-text-to-video-app-id"
+IMAGE_REPAIR_RUNNINGHUB_WEBAPP_ID = "your-image-repair-app-id"
+IMAGE_UPSCALE_RUNNINGHUB_WEBAPP_ID = "your-image-upscale-app-id"
+FACE_SWAP_RUNNINGHUB_WEBAPP_ID = "your-face-swap-app-id"
+
+
+# 阿里云API密钥
+TEXT_TO_IMAGE_DASHSCOPE_API_KEY = "YOUR_TEXT_TO_IMAGE_DASHSCOPE_API_KEY"
+TEXT_TO_VIDEO_DASHSCOPE_API_KEY = "YOUR_TEXT_TO_VIDEO_DASHSCOPE_API_KEY"
+IMAGE_REPAIR_DASHSCOPE_API_KEY = "YOUR_IMAGE_REPAIR_DASHSCOPE_API_KEY"
+IMAGE_UPSCALE_DASHSCOPE_API_KEY = "YOUR_IMAGE_UPSCALE_DASHSCOPE_API_KEY"
+FACE_SWAP_DASHSCOPE_API_KEY = "YOUR_FACE_SWAP_DASHSCOPE_API_KEY"
+
+# 阿里云OSS配置
+OSS_REGION = "oss-cn-hangzhou"
+OSS_BUCKET = "your-oss-bucket-name"
+OSS_ACCESS_KEY_ID = "your-oss-access-key-id"
+OSS_ACCESS_KEY_SECRET = "your-oss-access-key-secret"
+
+# 支付系统配置
+EPAY_API_URL = "https://your-payment-gateway.com/"
+EPAY_PID = "your-partner-id"
+EPAY_PLATFORM_PUBLIC_KEY = "your-platform-public-key"
+EPAY_MERCHANT_PRIVATE_KEY = "your-merchant-private-key"
+
+# 添加支付系统回调域名配置
+PAYMENT_RETURN_DOMAIN = "https://aideator.top"
+PAYMENT_NOTIFY_DOMAIN = "https://aideator.top"
+
+# 数据库配置
+[[d1_databases]]
+binding = "DB"
+database_name = "my-database"
+database_id = "your-actual-database-id"
+
+# R2 存储桶配置
+[[r2_buckets]]
+binding = "MY_BUCKET"
+bucket_name = "my-bucket"

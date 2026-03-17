@@ -1,0 +1,8 @@
+
+{
+  "name": "智拍大师 Pro",
+  "description": "Advanced batch image generator for e-commerce, po",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
