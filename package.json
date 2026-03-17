@@ -6,19 +6,21 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/genai": "^1.45.0",
+    "@react-three/drei": "10.7.7",
+    "@react-three/fiber": "9.5.0",
+    "file-saver": "^2.0.5",
+    "jszip": "3.10.1",
+    "lucide-react": "0.562.0",
+    "path": "0.12.7",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "three": "0.182.0",
-    "lucide-react": "0.562.0",
-    "@react-three/fiber": "9.5.0",
-    "@react-three/drei": "10.7.7",
-    "jszip": "3.10.1",
-    "path": "0.12.7",
-    "url": "0.11.4",
-    "file-saver": "^2.0.5"
+    "url": "0.11.4"
   },
   "devDependencies": {
     "@types/node": "22.14.0",
