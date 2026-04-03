@@ -1,7 +1,8 @@
 
 import React, { useRef } from 'react';
-import { Upload, Camera, Aperture, Zap, Activity } from 'lucide-react';
+import { Upload, Camera, Aperture, Zap, Activity, RefreshCcw } from 'lucide-react';
 import { VisualAnalysis } from '../types';
+import { clearUserKeys } from '../../apiConfig';
 
 interface DirectorBoardProps {
   image: string | null;
@@ -17,16 +18,32 @@ const DirectorBoard: React.FC<DirectorBoardProps> = ({ image, onUpload, isAnalyz
     if (e.target.files?.[0]) onUpload(e.target.files[0]);
   };
 
+  const handleResetKey = () => {
+    if (confirm('确定要重置 API 配置吗？这将清除本地存储的 Key 并恢复默认配置。')) {
+      clearUserKeys();
+      window.location.reload();
+    }
+  };
+
   return (
     <div className="bg-[#0f172a] border-r border-white/10 p-6 flex flex-col h-full overflow-y-auto w-80 shrink-0">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(225,29,72,0.4)]">
-          <Camera className="w-6 h-6 text-white" />
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(225,29,72,0.4)]">
+            <Camera className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-black text-white tracking-tight uppercase">Vision Director</h1>
+            <p className="text-[10px] text-rose-400 font-bold tracking-widest uppercase">万象视觉导演</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg font-black text-white tracking-tight uppercase">Vision Director</h1>
-          <p className="text-[10px] text-rose-400 font-bold tracking-widest uppercase">万象视觉导演</p>
-        </div>
+        <button 
+          onClick={handleResetKey}
+          className="p-2 text-slate-500 hover:text-rose-500 transition-colors"
+          title="重置 API 配置"
+        >
+          <RefreshCcw className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Upload Zone */}

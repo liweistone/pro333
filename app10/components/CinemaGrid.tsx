@@ -5,9 +5,10 @@ import { Image as ImageIcon, Loader2, Download, Maximize2 } from 'lucide-react';
 
 interface CinemaGridProps {
   tasks: ShotTask[];
+  onPreview: (url: string) => void;
 }
 
-const CinemaGrid: React.FC<CinemaGridProps> = ({ tasks }) => {
+const CinemaGrid: React.FC<CinemaGridProps> = ({ tasks, onPreview }) => {
   const downloadImage = async (url: string, filename: string) => {
     try {
       const response = await fetch(url);
@@ -50,7 +51,7 @@ const CinemaGrid: React.FC<CinemaGridProps> = ({ tasks }) => {
                     </div>
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => window.open(task.imageUrl, '_blank')}
+                        onClick={() => onPreview(task.imageUrl!)}
                         className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg backdrop-blur-md transition-colors"
                       >
                         <Maximize2 className="w-4 h-4" />

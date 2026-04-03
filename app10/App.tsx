@@ -15,6 +15,11 @@ const App: React.FC = () => {
   const [scripts, setScripts] = useState<ShotTask[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // 新增：预览与设置状态
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [resolution, setResolution] = useState('1K');
+  
   // 用于存储每个任务的本地模拟进度
   const progressSimulations = useRef<{ [key: number]: number }>({});
 
@@ -61,7 +66,10 @@ const App: React.FC = () => {
       progressSimulations.current[task.id] = 5; // Init simulation
 
       try {
-        const taskId = await directorService.shootScene(task.prompt, refImage);
+        const taskId = await directorService.shootScene(task.prompt, refImage, { 
+          aspectRatio, 
+          imageSize: resolution 
+        });
         updateScriptStatus(task.id, { taskId });
         pollTask(task.id, taskId);
       } catch (e) {
@@ -135,8 +143,47 @@ const App: React.FC = () => {
         scripts={scripts} 
         onStartAll={startShooting}
         isProcessing={isProcessing}
+        aspectRatio={aspectRatio}
+        setAspectRatio={setAspectRatio}
+        resolution={resolution}
+        setResolution={setResolution}
       />
-      <CinemaGrid tasks={scripts} />
+      <CinemaGrid 
+        tasks={scripts} 
+        onPreview={(url) => setPreviewImage(url)}
+      />
+
+      {/* 图像大图预览层 (透明遮罩) */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div 
+            className="relative max-w-full max-h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={previewImage} 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-white/10" 
+              alt="Preview"
+            />
+            
+            {/* 关闭按钮 */}
+            <button 
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-12 right-0 md:-right-12 md:top-0 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all hover:scale-110 active:scale-90"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            {/* 底部信息 (可选) */}
+            <div className="absolute -bottom-10 left-0 right-0 text-center">
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Vision Director Preview Mode</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

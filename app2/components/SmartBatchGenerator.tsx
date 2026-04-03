@@ -5,12 +5,14 @@ import { analyzeImageForPrompt, AnalysisResponse } from '../services/grsaiapi';
 
 /**
  * 一致性一致性锁定引擎 (Consistency Lockdown Engine)
+ * const PRODUCT_CONSISTENCY_ANCHOR = "(与参考图完全一致的产品:1.9), (工业设计像素级还原:1.8), (严格保持原始Logo和品牌元素:1.7), (形状和结构零偏差:1.6), (原始材质和纹理保留:1.5)";
+const PERSON_CONSISTENCY_ANCHOR = "(与参考图完全一致的人物:1.9), (面部生物特征完全一致:1.8), (严格保持服装图案和颜色:1.7), (禁止角色幻觉:1.6)";
  */
-const PRODUCT_CONSISTENCY_ANCHOR = "(the exact identical product shown in reference image:1.9), (pixel-perfect replication of industrial design:1.8), (strictly maintain original logo and branding elements:1.7), (zero variation in shape and structure:1.6), (original material and texture preservation:1.5)";
-const PERSON_CONSISTENCY_ANCHOR = "(the exact same person from the reference image:1.9), (identical facial biometric features:1.8), (strictly same clothing patterns and colors:1.7), (no character hallucination:1.6)";
+const PRODUCT_CONSISTENCY_ANCHOR = "(保持产品原始材质和纹理保留:1.5)";
+const PERSON_CONSISTENCY_ANCHOR = "(保持原图像人物和服装细节不主变)";
 
-const PRODUCT_SUFFIX = ", (masterpiece:1.2), (photorealistic:1.3), 8k resolution, professional studio lighting, commercial advertising photography, sharp focus, highly detailed textures.";
-const PERSON_SUFFIX = ", (masterpiece:1.2), (ultra-high detail portrait:1.4), (natural skin texture:1.3), 8k resolution, cinematic lighting, professional fashion photography.";
+const PRODUCT_SUFFIX = ", (杰作:1.2), (写实主义:1.3), 8k分辨率, 专业影棚灯光, 商业广告摄影, 锐利对焦, 高度详细的纹理。";
+const PERSON_SUFFIX = ", (杰作:1.2), (超高清细节肖像:1.4), (自然皮肤纹理:1.3), 8k分辨率, 电影感灯光, 专业时尚摄影。";
 
 const STATIC_PERSON_TEMPLATES = [
   {
@@ -88,6 +90,7 @@ const SmartBatchGenerator: React.FC<SmartBatchGeneratorProps> = ({ onGenerate })
     product: null
   });
   const [selectedSubItems, setSelectedSubItems] = useState<Set<string>>(new Set());
+  const [highConsistency, setHighConsistency] = useState(true);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -157,7 +160,14 @@ const SmartBatchGenerator: React.FC<SmartBatchGeneratorProps> = ({ onGenerate })
     if (!currentData) return;
 
     const baseDescription = currentData.description.replace(/\s+/g, ' ').trim();
-    const anchor = subjectType === 'person' ? PERSON_CONSISTENCY_ANCHOR : PRODUCT_CONSISTENCY_ANCHOR;
+    let anchor = subjectType === 'person' ? PERSON_CONSISTENCY_ANCHOR : PRODUCT_CONSISTENCY_ANCHOR;
+    
+    // 增强一致性权重
+    if (highConsistency) {
+      anchor = anchor.replace(/1\.9/g, '2.5').replace(/1\.8/g, '2.2').replace(/1\.7/g, '2.0');
+      anchor += ", (像素级精准克隆:2.0), (严禁任何形变:1.8), (保持原始光影和质感:1.7)";
+    }
+
     const suffix = subjectType === 'person' ? PERSON_SUFFIX : PRODUCT_SUFFIX;
     let generatedPrompts: string[] = [];
 
@@ -336,7 +346,7 @@ const SmartBatchGenerator: React.FC<SmartBatchGeneratorProps> = ({ onGenerate })
         </div>
         <div>
           <h2 className="text-lg font-black text-slate-900 tracking-tight">智能一致性裂变</h2>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Consistency Lockdown Protocol</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">一致性锁定协议 (Consistency Lockdown Protocol)</p>
         </div>
       </div>
 
@@ -365,6 +375,19 @@ const SmartBatchGenerator: React.FC<SmartBatchGeneratorProps> = ({ onGenerate })
           </div>
 
           <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-indigo-900">极致一致性模式 (Ultra-Consistency)</span>
+                <span className="text-[9px] text-indigo-400">大幅提升参考图权重，严禁模型自由发挥</span>
+              </div>
+              <button 
+                onClick={() => setHighConsistency(!highConsistency)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${highConsistency ? 'bg-indigo-600' : 'bg-slate-200'}`}
+              >
+                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${highConsistency ? 'translate-x-5' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">解构模式</label>
               <div className="flex gap-2 p-1.5 bg-slate-100 rounded-xl">
@@ -402,7 +425,7 @@ const SmartBatchGenerator: React.FC<SmartBatchGeneratorProps> = ({ onGenerate })
                     <svg className="w-4 h-4 text-indigo-400 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                     </svg>
-                    解构商业视角 (Deep Scan)
+                    解构商业视角 (深度扫描)
                   </>
                 )}
               </button>

@@ -30,6 +30,7 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
   const [progress, setProgress] = useState(0);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
 
@@ -49,6 +50,14 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
       setAspectRatio('1:1'); 
     }
   }, [prefillData]);
+
+  // 提示词输入框自适应高度
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [prompt]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -125,6 +134,8 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
           ? await imageAdapter.checkTaskStatus(taskId) 
           : await videoAdapter.checkVideoTaskStatus(taskId);
 
+        console.log(`Task ${taskId} status:`, res.status, res);
+
         if (res.status === 'succeeded' && res.results?.[0]?.url) {
           clearInterval(interval);
           setProgress(100);
@@ -132,10 +143,18 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
           setIsGenerating(false);
         } else if (res.status === 'failed') {
           clearInterval(interval);
-          alert("任务执行失败，请检查提示词或素材");
+          alert(`任务执行失败: ${res.failure_reason || '未知错误'}`);
           setIsGenerating(false);
         }
-      } catch (e) { }
+      } catch (e: any) {
+        console.error("Polling error:", e);
+        // 如果是 404 或者明确的任务不存在错误，可以考虑停止轮询
+        if (e.message?.includes('404') || e.message?.includes('not found')) {
+          clearInterval(interval);
+          setIsGenerating(false);
+          alert("任务不存在或查询失败");
+        }
+      }
     }, 3000);
   };
 
@@ -242,20 +261,23 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
               {activeTab === 'image' ? renderImageSlots() : renderFixedSlots()}
             </div>
 
-            {/* 提示词输入区：大幅加高至 520px */}
-            <div className="flex-1 min-h-[520px] relative flex flex-col">
-               <textarea 
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  disabled={isGenerating}
-                  placeholder={activeTab === 'image' ? '输入绘图提示词，或留空基于上方素材进行风格一致性重构...' : '当前功能正在内部测试中，敬请期待...'}
-                  className="w-full flex-1 text-lg font-bold text-slate-800 placeholder:text-slate-200 outline-none resize-none bg-transparent leading-relaxed"
-               />
-               
-               {/* 徽章改为右下角静态，不再遮挡文字 */}
-               <div className="self-end mt-4 flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm">
-                  <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">智造重构引擎已就绪</span>
+            {/* 提示词输入区：增加边框和自适应高度 */}
+            <div className="flex-1 relative flex flex-col">
+               <div className={`flex-1 min-h-[400px] p-6 rounded-3xl border-2 transition-all duration-300 bg-slate-50/30 flex flex-col ${isGenerating ? 'border-slate-100 opacity-60' : 'border-slate-100 hover:border-indigo-100 focus-within:border-indigo-500/30 focus-within:bg-white focus-within:shadow-sm'}`}>
+                  <textarea 
+                      ref={textareaRef}
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      disabled={isGenerating}
+                      placeholder={activeTab === 'image' ? '输入绘图提示词，或留空基于上方素材进行风格一致性重构...' : '当前功能正在内部测试中，敬请期待...'}
+                      className="w-full flex-1 text-lg font-bold text-slate-800 placeholder:text-slate-200 outline-none resize-none bg-transparent leading-relaxed overflow-hidden"
+                  />
+                  
+                  {/* 徽章改为右下角静态，不再遮挡文字 */}
+                  <div className="self-end mt-4 flex items-center gap-3 px-4 py-2 bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl shadow-sm">
+                      <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">智造重构引擎已就绪</span>
+                  </div>
                </div>
             </div>
           </div>
@@ -329,7 +351,14 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-8 flex items-center gap-3">
                 <LayoutGrid className="w-3.5 h-3.5 text-indigo-500" /> 智造成品预览 (Rendered)
               </p>
-              <div className="bg-white rounded-[48px] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.15)] border-8 border-white aspect-video relative group ring-1 ring-slate-100">
+              <div 
+                className={`bg-white rounded-[48px] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.15)] border-8 border-white relative group ring-1 ring-slate-100 transition-all duration-500 mx-auto`}
+                style={{ 
+                  aspectRatio: aspectRatio.replace(':', '/'),
+                  width: '100%',
+                  maxWidth: aspectRatio === '9:16' ? '400px' : aspectRatio === '3:4' ? '500px' : '100%'
+                }}
+              >
                 {activeTab === 'video' ? (
                   <video src={resultUrl} className="w-full h-full object-cover" autoPlay loop muted controls />
                 ) : (

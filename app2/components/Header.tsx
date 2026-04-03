@@ -18,7 +18,7 @@ const Header: React.FC = () => {
         <div className="hidden sm:flex items-center gap-4 text-right">
           <div className="flex flex-col items-end">
              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                BatchMaster Visual Engine
+                裂变大师 视觉引擎
              </span>
              <span className="text-[10px] text-slate-400 mt-0.5">全量生产流水线已连接</span>
           </div>

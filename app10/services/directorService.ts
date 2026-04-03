@@ -11,15 +11,15 @@ const taskAdapter = new TaskAdapter();
 // 1. 定义硬编码的 9 大分镜模板 (System Anchors)
 // 即使 AI 罢工，这些模板结合提取的视觉 DNA 也能生成完美图像
 const SCENE_TEMPLATES = [
-  { id: 1, type: "Establishing Shot", title: "环境定调", cnDescription: "广角交代人物与环境关系，确立影片基调", basePrompt: "wide angle full body shot, cinematic environmental portrait, establishing shot" },
-  { id: 2, type: "Candid Portrait", title: "生动抓拍", cnDescription: "捕捉不经意间的自然神态，打破摆拍感", basePrompt: "medium shot, candid moment, natural expression, looking away from camera, dynamic pose" },
-  { id: 3, type: "Texture Detail", title: "材质特写", cnDescription: "聚焦服装或面部的高清细节，展现质感", basePrompt: "extreme close-up, macro photography, focus on details, skin texture, fabric texture, shallow depth of field" },
-  { id: 4, type: "Dynamic Motion", title: "动态瞬间", cnDescription: "展现运动中的张力与发丝飞舞的瞬间", basePrompt: "dynamic motion blur, hair floating in wind, action shot, energetic pose, freezing time" },
-  { id: 5, type: "Cinematic Light", title: "光影叙事", cnDescription: "利用强烈的明暗对比营造电影氛围", basePrompt: "dramatic cinematic lighting, chiaroscuro, volumetrics, moody atmosphere, rembrandt lighting" },
-  { id: 6, type: "Dutch Angle", title: "非常规视角", cnDescription: "打破平衡的创意构图，增加视觉冲击力", basePrompt: "dutch angle, tilted camera, dynamic perspective, from below or above, artistic composition" },
-  { id: 7, type: "Interactive", title: "互动情节", cnDescription: "与道具或环境产生深度交互", basePrompt: "interacting with object, holding prop, engaging with environment, storytelling moment" },
-  { id: 8, type: "Emotional", title: "情绪特写", cnDescription: "直击灵魂的眼神交流，虚化背景", basePrompt: "intimate portrait, direct eye contact, emotional expression, soft lighting, bokeh background" },
-  { id: 9, type: "Atmosphere", title: "氛围留白", cnDescription: "极简构图与意境营造，突出主体轮廓", basePrompt: "minimalist composition, negative space, silhouette, atmospheric haze, artistic mood" }
+  { id: 1, type: "Establishing Shot", title: "环境定调", cnDescription: "广角交代人物与环境关系，确立影片基调", basePrompt: "保持人物面部和服装细节不变，wide angle full body shot, cinematic environmental portrait, establishing shot" },
+  { id: 2, type: "Candid Portrait", title: "生动抓拍", cnDescription: "捕捉不经意间的自然神态，打破摆拍感", basePrompt: "保持人物面部和服装细节不变，medium shot, candid moment, natural expression, looking away from camera, dynamic pose" },
+  { id: 3, type: "Texture Detail", title: "材质特写", cnDescription: "聚焦服装或面部的高清细节，展现质感", basePrompt: "保持人物面部和服装细节不变，extreme close-up, macro photography, focus on details, skin texture, fabric texture, shallow depth of field" },
+  { id: 4, type: "Dynamic Motion", title: "动态瞬间", cnDescription: "展现运动中的张力与发丝飞舞的瞬间", basePrompt: "保持人物面部和服装细节不变，dynamic motion blur, hair floating in wind, action shot, energetic pose, freezing time" },
+  { id: 5, type: "Cinematic Light", title: "光影叙事", cnDescription: "利用强烈的明暗对比营造电影氛围", basePrompt: "保持人物面部和服装细节不变，dramatic cinematic lighting, chiaroscuro, volumetrics, moody atmosphere, rembrandt lighting" },
+  { id: 6, type: "Dutch Angle", title: "非常规视角", cnDescription: "打破平衡的创意构图，增加视觉冲击力", basePrompt: "保持人物面部和服装细节不变，dutch angle, tilted camera, dynamic perspective, from below or above, artistic composition" },
+  { id: 7, type: "Interactive", title: "互动情节", cnDescription: "与道具或环境产生深度交互", basePrompt: "保持人物面部和服装细节不变，interacting with object, holding prop, engaging with environment, storytelling moment" },
+  { id: 8, type: "Emotional", title: "情绪特写", cnDescription: "直击灵魂的眼神交流，虚化背景", basePrompt: "保持人物面部和服装细节不变，intimate portrait, direct eye contact, emotional expression, soft lighting, bokeh background" },
+  { id: 9, type: "Atmosphere", title: "氛围留白", cnDescription: "极简构图与意境营造，突出主体轮廓", basePrompt: "保持人物面部和服装细节不变，minimalist composition, negative space, atmospheric haze, artistic mood" }
 ];
 
 const SYSTEM_PROMPT = `
@@ -33,9 +33,11 @@ const SYSTEM_PROMPT = `
 2. **Scripts**: 针对 9 个分镜，分别生成一段 Prompt。
    - Prompt 必须包含 [KeyElements] 以保持角色一致性。
    - Prompt 必须包含该分镜特有的镜头语言。
+   - Prompt 必须输出为中文提示词，禁止输出英文字符。
+   - 在输出id3：材质特写时，要求只请允许输出一样，只输出服装特写或者面部高清细节，不要同时出现服装和面部在提示词中。
 
 ## 严格 JSON 格式
-请直接输出 JSON，不要包含 Markdown 标记：
+请直接输出 JSON，不要包含 Markdown 标记，不要包含任何思考过程（如 <think> 标签）：
 {
   "analysis": {
     "style": "...", "mood": "...", "lighting": "...", "keyElements": "..."
@@ -162,7 +164,7 @@ export class DirectorService {
   /**
    * 执行拍摄
    */
-  async shootScene(prompt: string, referenceImage: string): Promise<string> {
+  async shootScene(prompt: string, referenceImage: string, options: { aspectRatio?: string, imageSize?: string } = {}): Promise<string> {
     try {
       // 强化一致性 Prompt
       const anchorPrompt = `(consistent character and details:1.5), ${prompt}, professional photography`;
@@ -170,9 +172,9 @@ export class DirectorService {
       return await imageAdapter.createGenerationTask(
         anchorPrompt, 
         { 
-          model: 'gemini-3-pro-image-preview',
-          aspectRatio: '1:1',
-          imageSize: '1K' 
+          model: 'gemini-3.1-flash-image-preview',
+          aspectRatio: options.aspectRatio || '1:1',
+          imageSize: options.imageSize || '1K' 
         },
         [referenceImage]
       );

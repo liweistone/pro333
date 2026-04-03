@@ -1,55 +1,56 @@
-import { GenerationConfig, GrsaiApiResponse } from "./types";
-import { ImageAdapter } from "../services/adapters/imageAdapter";
-import { TaskAdapter } from "../services/adapters/taskAdapter";
 
-const imageAdapter = new ImageAdapter();
-const taskAdapter = new TaskAdapter();
+import { AspectRatio, ImageSize, ApimartApiResponse, ApimartTaskStatusResponse, GenerationConfig } from "./types";
+
+const BASE_URL = "/api";
 
 /**
- * 对接大项目标准 Apimart 引擎创建绘图任务
+ * 在 Apimart 平台上创建一个新的图像生成任务。
  */
 export const createGenerationTask = async (
   prompt: string,
   config: GenerationConfig,
   referenceImages: string[] = []
 ): Promise<string> => {
-  try {
-    const taskId = await imageAdapter.createGenerationTask(
-      prompt,
-      {
-        model: "gemini-3-pro-image-preview",
-        size: config.aspectRatio === "auto" ? "1:1" : config.aspectRatio,
-        resolution: config.imageSize,
-        n: 1
-      },
-      referenceImages
-    );
+  
+  const payload = {
+    model: config.model,
+    prompt,
+    size: config.aspectRatio,
+    resolution: config.imageSize,
+    image_urls: referenceImages,
+    n: 1,
+    google_search: config.googleSearch,
+    google_image_search: config.googleImageSearch
+  };
 
-    return taskId;
-  } catch (error: any) {
-    console.error("Apimart Submit Error:", error);
-    throw new Error(error.message || "绘图任务分发失败");
+  const response = await fetch(`${BASE_URL}/images/generations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const result: ApimartApiResponse = await response.json();
+  if (result.code === 200 && result.data?.[0]?.task_id) {
+    return result.data[0].task_id;
   }
+
+  throw new Error(result.error?.message || "创建生成任务失败");
 };
 
 /**
- * 轮询任务执行结果
+ * 轮询特定任务的执行结果。
  */
-export const checkTaskStatus = async (taskId: string): Promise<any> => {
-  try {
-    const status = await taskAdapter.getTaskStatus(taskId);
-    
-    return {
-      id: taskId,
-      status: status.status === 'completed' || status.status === 'succeeded' ? 'succeeded' : status.status,
-      progress: status.progress,
-      results: status.imageUrl ? 
-        [{ url: status.imageUrl }] : undefined,
-      failure_reason: status.error,
-      error: status.error
-    };
-  } catch (error: any) {
-    console.error("Apimart Result Error:", error);
-    throw error;
+export const checkTaskStatus = async (taskId: string): Promise<ApimartTaskStatusResponse['data']> => {
+  const response = await fetch(`${BASE_URL}/tasks/${taskId}?language=zh`, {
+    method: 'GET'
+  });
+
+  const result: ApimartTaskStatusResponse = await response.json();
+  if (result.code === 200) {
+    return result.data;
   }
+  
+  throw new Error(result.error?.message || "查询任务状态失败");
 };

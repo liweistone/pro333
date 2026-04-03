@@ -56,7 +56,7 @@ const KeyManagerModal: React.FC<{ isOpen: boolean; onClose: () => void; onStatus
               </div>
               <div>
                 <h2 className="text-3xl font-black text-white tracking-tight text-left">API 配置管理</h2>
-                <p className="text-[12px] text-blue-400 font-bold uppercase tracking-widest mt-1 text-left">Unified Apimart Gateway</p>
+                <p className="text-[12px] text-blue-400 font-bold uppercase tracking-widest mt-1 text-left">Unified apikey Gateway</p>
               </div>
             </div>
             <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-full transition-all text-slate-400 hover:text-white group">
@@ -329,7 +329,7 @@ const App: React.FC = () => {
       {view !== 'launcher' && (
         <button 
           onClick={() => setView('launcher')}
-          className="fixed bottom-10 right-10 z-[9999] flex items-center gap-3 px-6 py-4 bg-blue-600 hover:bg-blue-50 text-white rounded-full shadow-[0_20px_50px_rgba(59,130,246,0.5)] border border-blue-400/30 transition-all duration-300 hover:scale-110 active:scale-95 group"
+          className="fixed bottom-10 right-10 z-[9999] flex items-center gap-3 px-6 py-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-full shadow-[0_20px_50px_rgba(59,130,246,0.5)] border border-blue-400/30 transition-all duration-300 hover:scale-110 active:scale-95 group"
         >
           <Home className="w-5 h-5 group-hover:rotate-12 transition-transform" />
           <span className="font-black text-sm uppercase tracking-widest">返回大厅</span>

@@ -262,7 +262,7 @@ const App7PresetHub: React.FC<App7PresetHubProps> = ({ onUsePreset }) => {
                             className="px-5 py-2.5 bg-white text-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 ring-4 ring-white/10"
                           >
                             <Sparkles className="w-3.5 h-3.5" />
-                            Use Inspiration
+                            生成同款
                           </button>
                       </div>
                     </div>

@@ -7,10 +7,36 @@ interface ScriptMonitorProps {
   scripts: ShotTask[];
   onStartAll: () => void;
   isProcessing: boolean;
+  aspectRatio: string;
+  setAspectRatio: (val: string) => void;
+  resolution: string;
+  setResolution: (val: string) => void;
 }
 
-const ScriptMonitor: React.FC<ScriptMonitorProps> = ({ scripts, onStartAll, isProcessing }) => {
+const ScriptMonitor: React.FC<ScriptMonitorProps> = ({ 
+  scripts, 
+  onStartAll, 
+  isProcessing,
+  aspectRatio,
+  setAspectRatio,
+  resolution,
+  setResolution
+}) => {
   if (scripts.length === 0) return null;
+
+  const aspectRatios = [
+    { label: '1:1', value: '1:1' },
+    { label: '16:9', value: '16:9' },
+    { label: '9:16', value: '9:16' },
+    { label: '4:3', value: '4:3' },
+    { label: '3:4', value: '3:4' }
+  ];
+
+  const resolutions = [
+    { label: '1K', value: '1K' },
+    { label: '2K', value: '2K' },
+    { label: '4K', value: '4K' }
+  ];
 
   return (
     <div className="w-80 bg-[#020617] border-r border-white/10 flex flex-col h-full shrink-0">
@@ -44,7 +70,50 @@ const ScriptMonitor: React.FC<ScriptMonitorProps> = ({ scripts, onStartAll, isPr
         ))}
       </div>
 
-      <div className="p-4 border-t border-white/10 bg-[#0f172a]/50">
+      <div className="p-4 border-t border-white/10 bg-[#0f172a]/50 space-y-4">
+        {/* 拍摄设置 */}
+        <div className="space-y-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">尺寸比例 Aspect Ratio</label>
+            <div className="flex flex-wrap gap-1.5">
+              {aspectRatios.map((ratio) => (
+                <button
+                  key={ratio.value}
+                  onClick={() => setAspectRatio(ratio.value)}
+                  disabled={isProcessing}
+                  className={`px-2 py-1 text-[10px] font-bold rounded border transition-all ${
+                    aspectRatio === ratio.value 
+                    ? 'bg-indigo-600 border-indigo-500 text-white' 
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                  }`}
+                >
+                  {ratio.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">分辨率 Resolution</label>
+            <div className="flex gap-1.5">
+              {resolutions.map((res) => (
+                <button
+                  key={res.value}
+                  onClick={() => setResolution(res.value)}
+                  disabled={isProcessing}
+                  className={`flex-1 py-1 text-[10px] font-bold rounded border transition-all ${
+                    resolution === res.value 
+                    ? 'bg-indigo-600 border-indigo-500 text-white' 
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                  }`}
+                >
+                  {res.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={onStartAll}
           disabled={isProcessing || scripts.some(s => s.status === 'running')}
