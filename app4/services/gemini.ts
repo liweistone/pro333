@@ -2,33 +2,33 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { OptimizationGoal, OptimizationResult } from "../types";
 
 /**
- * Optimizes code based on a specific goal using Gemini.
+ * 使用 Gemini 根据特定目标优化代码。
  */
 export const optimizeCode = async (
   code: string,
   goal: OptimizationGoal,
   context?: string
 ): Promise<OptimizationResult> => {
-  // Initialize AI client with the required process.env.API_KEY.
+  // 使用所需的 process.env.API_KEY 初始化 AI 客户端。
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const prompt = `
-    As a world-class senior frontend React engineer, optimize the following code.
+    作为一名世界级的资深前端 React 工程师，请优化以下代码。
     
-    Optimization Goal: ${goal}
-    ${context ? `Additional Context: ${context}` : ''}
+    优化目标: ${goal}
+    ${context ? `额外上下文: ${context}` : ''}
 
-    Code to optimize:
+    待优化代码:
     \`\`\`tsx
     ${code}
     \`\`\`
 
-    Requirements:
-    1. Provide the complete optimized code.
-    2. List the specific architectural changes made.
-    3. Provide a brief explanation of why these changes improve the code based on the goal.
-    4. Use modern React 18+ patterns (hooks, functional components).
-    5. Ensure high-quality TypeScript typing.
+    要求:
+    1. 提供完整的优化后的代码。
+    2. 列出所做的具体架构更改。
+    3. 简要说明为什么这些更改根据目标改进了代码。
+    4. 使用现代 React 18+ 模式（hooks, functional components）。
+    5. 确保高质量的 TypeScript 类型定义。
   `;
 
   const response = await ai.models.generateContent({
@@ -51,6 +51,6 @@ export const optimizeCode = async (
     }
   });
 
-  // Extract text output using the .text property as per guidelines.
+  // 根据指南使用 .text 属性提取文本输出。
   return JSON.parse(response.text || '{}') as OptimizationResult;
 };

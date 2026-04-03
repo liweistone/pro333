@@ -16,9 +16,9 @@ export enum AspectRatio {
 }
 
 export enum ImageSize {
-  K1 = "1K",
-  K2 = "2K",
-  K4 = "4K"
+  ONE_K = "1K",
+  TWO_K = "2K",
+  FOUR_K = "4K"
 }
 
 export interface GeneratedImage {
@@ -92,7 +92,7 @@ export interface AppResponse {
   scenarioPrompts: PromptSet[];
 }
 
-// Optimization types for code optimization service
+// 代码优化服务的优化类型
 export type OptimizationGoal = 'performance' | 'readability' | 'maintainability' | 'modernization';
 
 export interface OptimizationResult {

@@ -12,7 +12,7 @@ const Header: React.FC = () => {
             </svg>
           </div>
           <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
-            Grsai <span className="text-blue-600">Batch Pro</span>
+            Grsai <span className="text-blue-600">电商批量大师</span>
           </h1>
         </div>
         <div className="hidden sm:flex items-center gap-4">
@@ -20,7 +20,7 @@ const Header: React.FC = () => {
              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">
                 Nano Banana Pro
              </span>
-             <span className="text-[10px] text-slate-400 mt-0.5">API: Connected (v1/draw)</span>
+             <span className="text-[10px] text-slate-400 mt-0.5">API 状态: 已连接 (v1/draw)</span>
           </div>
         </div>
       </div>

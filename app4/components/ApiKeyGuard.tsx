@@ -14,26 +14,26 @@ const ApiKeyGuard: React.FC<ApiKeyGuardProps> = ({ onSelectKey }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-3">API Key Required</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-3">需要 API 密钥</h1>
         <p className="text-slate-500 mb-8 text-sm leading-relaxed">
-          Gemini 3 Pro (Nano Banana Pro) requires you to use your own Google Cloud API Key. 
-          Please select a key from a paid GCP project to continue.
+          Gemini 3 Pro (Nano Banana Pro) 要求您使用自己的 Google Cloud API 密钥。
+          请从付费的 GCP 项目中选择一个密钥以继续。
         </p>
         
         <button
           onClick={onSelectKey}
           className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 group"
         >
-          <span>Select API Key</span>
+          <span>选择 API 密钥</span>
           <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </button>
         
         <p className="mt-6 text-[10px] text-slate-400">
-          Make sure your project has billing enabled. 
+          请确保您的项目已启用结算功能。
           <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-blue-600 hover:underline ml-1">
-            View Billing Documentation
+            查看结算文档
           </a>
         </p>
       </div>

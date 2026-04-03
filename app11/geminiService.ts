@@ -25,7 +25,7 @@ export const createGenerationTask = async (
       {
         aspectRatio: config.aspectRatio,
         imageSize: config.imageSize,
-        model: 'gemini-3-pro-image-preview'
+        model: 'gemini-3.1-flash-image-preview'
       },
       referenceImages
     );
@@ -107,7 +107,7 @@ export const generatePlan = async (productSpecs: string, imagesBase64?: string[]
 请生成非常详细的用户画像、SWOT分析、营销文案及新媒体策略。
 
 # JSON 输出格式 (扁平化结构，严禁深层嵌套)
-请严格输出纯 JSON，不要包含 Markdown。格式如下：
+请严格输出纯 JSON，不要包含 Markdown，不要包含任何思考过程（如 <think> 标签）。格式如下：
 {
   "analysis": {
     "userPersona": "详细用户画像",
@@ -143,7 +143,8 @@ export const generatePlan = async (productSpecs: string, imagesBase64?: string[]
 
 # 关键规则
 - \`fullPrompt\` 必须是基于上述模板填充后的中文完整提示词。
-- 请直接输出 JSON，不要 Markdown。
+- 请直接输出 JSON，不要 Markdown，不要包含任何思考过程（如 <think> 标签）。
+- 严禁输出任何非 JSON 的文字。
 
 # JSON 输出格式
 {
@@ -182,14 +183,16 @@ export const generatePlan = async (productSpecs: string, imagesBase64?: string[]
         prompt: `产品信息：\n${productSpecs}`,
         schema: null,
         images: imagesBase64,
-        model: 'gemini-3-pro-preview'
+        model: 'gemini-3-pro-preview',
+        timeout: 180000
       }),
       multimodalAdapter.generateStructuredContent({
         systemInstruction: creativeInstruction,
         prompt: `产品信息：\n${productSpecs}`,
         schema: null,
         images: imagesBase64,
-        model: 'gemini-3-pro-preview'
+        model: 'gemini-3-pro-preview',
+        timeout: 180000
       })
     ]);
 

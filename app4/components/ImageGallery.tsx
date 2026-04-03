@@ -31,7 +31,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error('下载失败:', error);
       // 降级方案：直接打开链接
       window.open(item.url, '_blank');
     } finally {
@@ -123,7 +123,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
                 <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center">
                    <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                      <span className="text-[10px] text-white font-bold tracking-widest uppercase">4K High Definition</span>
+                      <span className="text-[10px] text-white font-bold tracking-widest uppercase">4K 超高清分辨率</span>
                    </div>
                 </div>
               </>

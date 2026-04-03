@@ -1,6 +1,6 @@
 {
-  "name": "测试电商视觉一体化解决方案",
-  "description": "Advanced batch image generator for e-commerce, powered by Grsai Nano Banana Pro API, supporting 4K resolution and reference images.",
+  "name": "万象商业全案 - 电商视觉一体化解决方案",
+  "description": "基于深度市场分析的电商主图策划与AI视觉生成工具，支持 4K 高清生图与多图参考。",
   "requestFramePermissions": [
     "camera"
   ]

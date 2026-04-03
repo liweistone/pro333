@@ -18,8 +18,8 @@ const ImageConfig: React.FC<ImageConfigProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (referenceImages.length >= 3) {
-        alert('最多支持上传 3 张参考图');
+      if (referenceImages.length >= 20) {
+        alert('最多支持上传 20 张参考图');
         return;
       }
       const reader = new FileReader();
@@ -40,10 +40,10 @@ const ImageConfig: React.FC<ImageConfigProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Reference Images Gallery */}
+      {/* 参考图画廊 */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <label className="text-sm font-medium text-slate-700">参考素材 ({referenceImages.length}/3)</label>
+          <label className="text-sm font-medium text-slate-700">参考素材 ({referenceImages.length}/20)</label>
           {referenceImages.length > 0 && (
             <button 
               onClick={() => onReferenceImagesChange([])}
@@ -69,7 +69,7 @@ const ImageConfig: React.FC<ImageConfigProps> = ({
             </div>
           ))}
           
-          {referenceImages.length < 3 && (
+          {referenceImages.length < 20 && (
             <label className="aspect-square flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer">
               <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -79,11 +79,11 @@ const ImageConfig: React.FC<ImageConfigProps> = ({
           )}
         </div>
         <p className="text-[10px] text-slate-400 leading-tight">
-          支持上传 3 张参考图（如：风格 + 构图 + 主体）。
+          支持上传 20 张参考图（如：风格 + 构图 + 主体）。
         </p>
       </div>
 
-      {/* Aspect Ratio */}
+      {/* 画布比例 */}
       <div>
         <label className="text-sm font-medium text-slate-700 block mb-2">画布比例</label>
         <div className="grid grid-cols-4 gap-2">
@@ -103,7 +103,7 @@ const ImageConfig: React.FC<ImageConfigProps> = ({
         </div>
       </div>
 
-      {/* Image Size / Resolution */}
+      {/* 图片尺寸 / 分辨率 */}
       <div>
         <label className="text-sm font-medium text-slate-700 block mb-2">生成分辨率 (Pro)</label>
         <div className="grid grid-cols-3 gap-2">

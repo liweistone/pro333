@@ -10,8 +10,8 @@ import {
 } from 'lucide-react';
 
 const MODELS = [
-  { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image (旗舰版)' },
-  { id: 'gemini-3-pro-image-preview-vip', name: 'Gemini 3 Pro Image VIP (高优先级)' }
+  { id: 'gemini-3.1-flash-image-preview', name: 'Gemini 3.1 Flash Image (旗舰版)' },
+  { id: 'gemini-3.1-flash-image-preview-official', name: 'Gemini 3.1 Flash Image Official (官方渠道)' }
 ];
 
 const App: React.FC = () => {
@@ -32,7 +32,7 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'gemini-3-pro-image-preview'
+    model: 'gemini-3.1-flash-image-preview'
   });
   const [results, setResults] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);

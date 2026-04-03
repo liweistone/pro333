@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { analyzePoster, generatePoster, getResultById, extractTextFromImage, identifyVisualElements } from '../services/apiService';
-import { Image as ImageIcon, Type, Sparkles, CheckCircle2, AlertCircle, Loader2, Download, ScanSearch, X, Palette, Zap, Eye, Settings2 } from 'lucide-react';
+import { analyzePoster, generatePoster, getResultById, extractTextFromImage, identifyVisualElements, PosterScheme } from '../services/apiService';
+import { Image as ImageIcon, Type, Sparkles, CheckCircle2, AlertCircle, Loader2, Download, ScanSearch, X, Palette, Zap, Eye, Settings2, Layers } from 'lucide-react';
 import FileSaver from 'file-saver';
 
 const CHAT_MODELS = [
@@ -8,7 +8,7 @@ const CHAT_MODELS = [
 ];
 
 const DRAW_MODELS = [
-  { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image (旗舰重构)' }
+  { id: 'gemini-3.1-flash-image-preview', name: 'Gemini 3.1 Flash (旗舰重构)' }
 ];
 
 // 对齐截图中的所有 13 种比例
@@ -58,6 +58,7 @@ const PosterApp: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [status, setStatus] = useState("");
+  const [schemes, setSchemes] = useState<PosterScheme[]>([]);
   const [taskList, setTaskList] = useState<GenerationTask[]>([]);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
@@ -142,14 +143,30 @@ const PosterApp: React.FC = () => {
     if (!styleImage || !copyText) return;
     try {
       setLoading(true);
-      setStatus("启动重构引擎...");
+      setSchemes([]);
+      setStatus("正在策划重构方案...");
+      const assets = dynamicSlots.map(s => ({ 
+        id: s.id, 
+        name: s.name, 
+        data: replacedImages[s.id] || null 
+      }));
+      const generatedSchemes = await analyzePoster('gemini-3-pro-preview', styleImage, assets, copyText);
+      setSchemes(generatedSchemes);
+      setStatus(`方案策划完成，请选择一个方案启动重构`);
+      setLoading(false);
+    } catch (e: any) { alert(e.message); setLoading(false); }
+  };
+
+  const handleGenerateFromScheme = async (scheme: PosterScheme) => {
+    try {
+      setLoading(true);
+      setStatus(`正在启动方案: ${scheme.title}...`);
       const assets = dynamicSlots.filter(s => replacedImages[s.id]).map(s => ({ id: s.id, data: replacedImages[s.id], name: s.name }));
-      const prompt = await analyzePoster('gemini-3-pro-preview', styleImage, assets, copyText);
       
       const currentRatio = aspectRatio === 'auto' ? '1:1' : aspectRatio;
       const taskId = await generatePoster({
-        model: 'gemini-3-pro-image-preview',
-        prompt,
+        model: 'gemini-3.1-flash-image-preview',
+        prompt: scheme.prompt,
         aspectRatio: currentRatio,
         imageSize,
         urls: [styleImage, ...assets.map(a => a.data)]
@@ -157,7 +174,7 @@ const PosterApp: React.FC = () => {
 
       const newTask: GenerationTask = { 
         id: taskId, 
-        prompt, 
+        prompt: scheme.prompt, 
         status: 'processing', 
         progress: 5, 
         createdAt: Date.now(), 
@@ -211,27 +228,27 @@ const PosterApp: React.FC = () => {
             </div>
 
             <button onClick={handleSubmit} disabled={loading || !styleImage || isAnalyzing} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl hover:bg-indigo-700 transition-all disabled:bg-slate-100 disabled:text-slate-400">
-              {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : "启动视觉重构"}
+              {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : "策划重构方案"}
             </button>
           </section>
         </div>
 
-        <div className="lg:col-span-8">
-          <section className="bg-white rounded-[2rem] p-10 shadow-sm border border-slate-100 min-h-full flex flex-col relative overflow-hidden">
+        <div className="lg:col-span-8 space-y-8">
+          <section className="bg-white rounded-[2rem] p-10 shadow-sm border border-slate-100 flex flex-col relative overflow-hidden">
             {isAnalyzing && <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center space-y-4"><Loader2 size={40} className="animate-spin text-indigo-600" /><p className="text-sm font-black text-slate-600">正在解析视觉 DNA...</p></div>}
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3"><div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><ScanSearch size={20} /></div><h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">AI 视觉分析结果</h2></div>
               {status && <div className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100">{status}</div>}
             </div>
             
-            <div className="grid md:grid-cols-2 gap-8 flex-1">
+            <div className="grid md:grid-cols-2 gap-8">
               <div className="flex flex-col space-y-4">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Type size={12} /> 文案层</label>
-                <textarea className="flex-1 p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] text-xs font-bold outline-none focus:bg-white transition-all" value={copyText} onChange={e => setCopyText(e.target.value)} />
+                <textarea className="h-40 p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] text-xs font-bold outline-none focus:bg-white transition-all" value={copyText} onChange={e => setCopyText(e.target.value)} />
               </div>
               <div className="flex flex-col space-y-4">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><ImageIcon size={12} /> 资产层</label>
-                <div className="flex-1 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] p-4 overflow-y-auto">
+                <div className="h-40 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] p-4 overflow-y-auto">
                    <div className="grid grid-cols-2 gap-4">
                      {dynamicSlots.map(slot => (
                        <div key={slot.id} onClick={() => slotInputRefs.current[slot.id]?.click()} className={`aspect-square rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center justify-center p-2 ${replacedImages[slot.id] ? 'border-indigo-500 bg-indigo-50' : 'border-white bg-white hover:border-indigo-100 shadow-sm'}`}>
@@ -244,6 +261,32 @@ const PosterApp: React.FC = () => {
               </div>
             </div>
           </section>
+
+          {schemes.length > 0 && (
+            <section className="bg-white rounded-[2rem] p-10 shadow-sm border border-slate-100 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><Layers size={20} /></div>
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">推荐重构方案</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {schemes.map(scheme => (
+                  <div key={scheme.id} className="group p-6 bg-slate-50 rounded-[2rem] border-2 border-transparent hover:border-indigo-500 hover:bg-white transition-all cursor-pointer flex flex-col space-y-4" onClick={() => handleGenerateFromScheme(scheme)}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">方案 {scheme.id}</span>
+                      <Sparkles size={14} className="text-indigo-400 group-hover:animate-pulse" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-black text-slate-800">{scheme.title}</h3>
+                      <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">{scheme.description}</p>
+                    </div>
+                    <button className="w-full py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-transparent transition-all">
+                      立即生成
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
 

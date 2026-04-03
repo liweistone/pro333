@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GeneratedImage, AspectRatio } from '../types';
-import { Eye, Download, RefreshCcw, AlertCircle, CheckCircle2, ImageIcon } from 'lucide-react';
+import { Eye, Download, RefreshCcw, AlertCircle, CheckCircle2, ImageIcon, X } from 'lucide-react';
 
 interface ImageGalleryProps {
   items: GeneratedImage[];
@@ -9,6 +9,7 @@ interface ImageGalleryProps {
 
 const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [previewItem, setPreviewItem] = useState<GeneratedImage | null>(null);
 
   const handleDownload = async (item: GeneratedImage) => {
     if (!item.url) return;
@@ -59,7 +60,8 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {items.map((item) => (
         <div 
           key={item.id} 
@@ -174,7 +176,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
             {item.status === 'succeeded' && (
               <div className="grid grid-cols-2 gap-2 mt-1 pt-3 border-t border-slate-50 animate-in slide-in-from-bottom-2 duration-300">
                 <button 
-                  onClick={() => window.open(item.url!, '_blank')}
+                  onClick={() => setPreviewItem(item)}
                   className="flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-50 text-slate-700 text-[10px] font-bold border border-slate-100 hover:bg-slate-100 transition-all active:scale-95"
                 >
                   <Eye className="w-3.5 h-3.5" />
@@ -202,6 +204,51 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
         </div>
       ))}
     </div>
+
+    {/* 图像预览弹窗层 */}
+    {previewItem && (
+      <div 
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm animate-in fade-in duration-300"
+        onClick={() => setPreviewItem(null)}
+      >
+        <div 
+          className="relative max-w-[95vw] max-h-[95vh] flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 关闭按钮 */}
+          <button 
+            onClick={() => setPreviewItem(null)}
+            className="absolute -top-12 right-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md border border-white/10 group"
+            title="关闭预览"
+          >
+            <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+          </button>
+
+          {/* 预览图像 */}
+          <img 
+            src={previewItem.url!} 
+            alt={previewItem.prompt} 
+            className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-300"
+          />
+
+          {/* 底部信息条 */}
+          <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-xl">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-white/60 uppercase tracking-widest font-bold mb-1">提示词 (Prompt)</p>
+              <p className="text-xs text-white font-medium line-clamp-1">{previewItem.prompt}</p>
+            </div>
+            <button 
+              onClick={() => handleDownload(previewItem)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20"
+            >
+              <Download className="w-3.5 h-3.5" />
+              下载原图
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
