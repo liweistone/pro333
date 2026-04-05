@@ -1,41 +1,30 @@
 {
-  "name": "智拍裂变全能王---studio-pro",
+  "name": "电商主图一体化解决方案",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^1.45.0",
-    "@react-three/drei": "10.7.7",
-    "@react-three/fiber": "9.5.0",
+    "@google/genai": "^1.34.0",
     "@tailwindcss/vite": "^4.2.2",
-    "@types/express": "^5.0.6",
     "autoprefixer": "^10.4.27",
-    "express": "^5.2.1",
-    "file-saver": "^2.0.5",
     "jszip": "3.10.1",
-    "lucide-react": "0.562.0",
+    "lucide-react": "^0.562.0",
     "motion": "^12.38.0",
-    "path": "0.12.7",
     "postcss": "^8.5.8",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "tailwindcss": "^4.2.2",
-    "three": "0.182.0",
-    "tsx": "^4.21.0",
-    "url": "0.11.4"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
-    "@types/node": "22.14.0",
-    "@types/react": "19.2.9",
-    "@types/three": "0.182.0",
-    "@vitejs/plugin-react": "5.1.2",
-    "typescript": "5.8.3",
-    "vite": "7.3.1"
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
   }
 }

@@ -8,22 +8,19 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-2 rounded-xl shadow-lg shadow-blue-100">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">
-              万象批改助手
-            </h1>
-            <span className="text-[10px] text-slate-400 font-medium tracking-widest mt-1 block">专业级多图同步替换引擎</span>
-          </div>
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
+            Grsai <span className="text-blue-600">电商批量大师</span>
+          </h1>
         </div>
         <div className="hidden sm:flex items-center gap-4">
           <div className="flex flex-col items-end">
              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                同步引擎 v1.2
+                Nano Banana Pro
              </span>
-             <span className="text-[10px] text-slate-400 mt-0.5">多图并行处理模式已开启</span>
+             <span className="text-[10px] text-slate-400 mt-0.5">API 状态: 已连接 (v1/draw)</span>
           </div>
         </div>
       </div>
