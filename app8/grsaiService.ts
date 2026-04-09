@@ -18,7 +18,7 @@ export const createGenerationTask = async (
     const taskId = await imageAdapter.createGenerationTask(
       prompt,
       {
-        model: "gemini-3-pro-image-preview",
+        model: "gemini-3.1-flash-image-preview",
         size: config.aspectRatio === AspectRatio.AUTO ? "1:1" : config.aspectRatio,
         resolution: config.imageSize,
         n: 1

@@ -151,6 +151,7 @@ const App: React.FC = () => {
       <CinemaGrid 
         tasks={scripts} 
         onPreview={(url) => setPreviewImage(url)}
+        aspectRatio={aspectRatio}
       />
 
       {/* 图像大图预览层 (透明遮罩) */}

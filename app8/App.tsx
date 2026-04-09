@@ -7,13 +7,14 @@ import ImageGallery from './components/ImageGallery';
 import { AspectRatio, ImageSize, GeneratedImage, GenerationConfig } from './types';
 import { createGenerationTask, checkTaskStatus } from './grsaiService';
 import JSZip from 'jszip';
+import { formatZipName, formatInternalFileName } from '@/services/utils/namingUtils';
 
 const App: React.FC = () => {
   const [promptsText, setPromptsText] = useState('');
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'gemini-3-pro-image-preview'
+    model: 'gemini-3.1-flash-image-preview'
   });
   const [batchImages, setBatchImages] = useState<string[]>([]);
   const [fixedImage, setFixedImage] = useState<string | null>(null);
@@ -159,8 +160,7 @@ const App: React.FC = () => {
           const response = await fetch(item.url!, { mode: 'cors' });
           if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
           const blob = await response.blob();
-          const safeBaseName = sanitizeFilename(item.prompt) || '万象批改结果';
-          const fileName = `${safeBaseName}-${item.id.slice(-4)}.png`;
+          const fileName = formatInternalFileName('app8', item.id);
           zip.file(fileName, blob);
         } catch (e) {
           console.error(`下载失败 [${item.id}]`, e);
@@ -172,7 +172,7 @@ const App: React.FC = () => {
       const blobUrl = window.URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `万象批改-批量导出-${Date.now()}.zip`;
+      link.download = formatZipName('app8');
       link.click();
       window.URL.revokeObjectURL(blobUrl);
     } catch (error: any) {

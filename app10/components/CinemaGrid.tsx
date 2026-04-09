@@ -2,23 +2,36 @@
 import React from 'react';
 import { ShotTask } from '../types';
 import { Image as ImageIcon, Loader2, Download, Maximize2 } from 'lucide-react';
+import { formatDownloadName } from '@/services/utils/namingUtils';
 
 interface CinemaGridProps {
   tasks: ShotTask[];
   onPreview: (url: string) => void;
+  aspectRatio?: string;
 }
 
-const CinemaGrid: React.FC<CinemaGridProps> = ({ tasks, onPreview }) => {
-  const downloadImage = async (url: string, filename: string) => {
+const CinemaGrid: React.FC<CinemaGridProps> = ({ tasks, onPreview, aspectRatio = '1:1' }) => {
+  const downloadImage = async (url: string, task: ShotTask) => {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
-      link.download = filename;
+      link.download = formatDownloadName('app10', task.title, task.id.toString());
       link.click();
     } catch (e) {
       window.open(url, '_blank');
+    }
+  };
+
+  const getAspectClass = (ratio: string) => {
+    switch (ratio) {
+      case '1:1': return 'aspect-square';
+      case '16:9': return 'aspect-video';
+      case '9:16': return 'aspect-[9/16]';
+      case '4:3': return 'aspect-[4/3]';
+      case '3:4': return 'aspect-[3/4]';
+      default: return 'aspect-square';
     }
   };
 
@@ -38,7 +51,7 @@ const CinemaGrid: React.FC<CinemaGridProps> = ({ tasks, onPreview }) => {
     <div className="flex-1 bg-black p-8 overflow-y-auto custom-scrollbar">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-fr">
         {tasks.map((task) => (
-          <div key={task.id} className="relative group aspect-square bg-[#0f172a] rounded-2xl overflow-hidden border border-white/5 ring-1 ring-white/5 transition-all hover:ring-indigo-500/50">
+          <div key={task.id} className={`relative group ${getAspectClass(aspectRatio)} bg-[#0f172a] rounded-2xl overflow-hidden border border-white/5 ring-1 ring-white/5 transition-all hover:ring-indigo-500/50`}>
             {task.status === 'success' && task.imageUrl ? (
               <>
                 <img src={task.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -57,7 +70,7 @@ const CinemaGrid: React.FC<CinemaGridProps> = ({ tasks, onPreview }) => {
                         <Maximize2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => downloadImage(task.imageUrl!, `VisionDirector-${task.id}.png`)}
+                        onClick={() => downloadImage(task.imageUrl!, task)}
                         className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg backdrop-blur-md transition-colors shadow-lg"
                       >
                         <Download className="w-4 h-4" />
