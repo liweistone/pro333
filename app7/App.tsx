@@ -152,10 +152,14 @@ const App7PresetHub: React.FC<App7PresetHubProps> = ({ onUsePreset }) => {
   const handleUseInspiration = async (preset: Preset) => {
     try {
       // 1. 调用接口获取该预设的所有效果图
-      const response = await fetch(getApiUrl(`/api/presets/${preset.id}/effect-images`));
+      const response = await fetch(getApiUrl(`/api/presets/${preset.id}/effect-images`), {
+        mode: 'cors',
+        credentials: 'omit'
+      });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const rawData = await response.json();
+      console.log("Preset effect images raw data:", rawData);
       
       // 2. 健壮性解析：检查多种可能的返回结构 (直接数组, .data, .results)
       const list = Array.isArray(rawData) 
@@ -168,14 +172,14 @@ const App7PresetHub: React.FC<App7PresetHubProps> = ({ onUsePreset }) => {
           const path = img.url || img.image_url || img.image || img.path;
           return path ? getImageUrl(path) : null;
         })
-        .filter(Boolean) as string[]; // 过滤掉无效路径
+        .filter((url: any) => typeof url === 'string' && url.length > 0) as string[];
 
       // 4. 将数据传递给大厅 (排除封面图，仅使用效果图)
       if (onUsePreset) {
         onUsePreset({
           prompt: preset.positive,
           negative: preset.negative || undefined,
-          images: effectUrls // 保持接口返回的原始顺序
+          images: effectUrls
         });
       }
       
@@ -275,12 +279,14 @@ const App7PresetHub: React.FC<App7PresetHubProps> = ({ onUsePreset }) => {
                         src={getImageUrl(preset.image)} 
                         className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 saturate-150 scale-110 pointer-events-none" 
                         aria-hidden="true"
+                        referrerPolicy="no-referrer"
                       />
                       
                       <img 
                         src={getImageUrl(preset.image)} 
                         className="relative z-10 w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-all duration-700" 
                         loading="lazy" 
+                        referrerPolicy="no-referrer"
                         onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";

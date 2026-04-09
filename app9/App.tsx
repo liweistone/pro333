@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Video, Image as ImageIcon, UserCircle2, Accessibility, Sparkles, Plus, Loader2, LayoutGrid, MonitorPlay, Zap, Wand2, ArrowRight, CheckCircle2, Download, Maximize2, X, RefreshCcw, Trash2, Cpu, Lock } from 'lucide-react';
 import { ImageAdapter } from '../services/adapters/imageAdapter';
 import { VideoAdapter } from '../services/adapters/videoAdapter';
+import { formatDownloadName } from '@/services/utils/namingUtils';
 
 const imageAdapter = new ImageAdapter();
 const videoAdapter = new VideoAdapter();
@@ -12,7 +13,7 @@ type ResolutionType = '1K' | '2K' | '4K';
 
 interface App9LumiereStationProps {
   isModal?: boolean;
-  prefillData?: { prompt: string; image: string } | null;
+  prefillData?: { prompt: string; negative?: string; images: string[] } | null;
 }
 
 const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefillData }) => {
@@ -46,7 +47,16 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
     if (prefillData) {
       setActiveTab('image');
       setPrompt(prefillData.prompt);
-      setImageRefs([prefillData.image]);
+      
+      // 关键：将 prefillData 中的 images 数组按顺序全部填充到参考图列表
+      if (prefillData.images && prefillData.images.length > 0) {
+        // 增加过滤，确保只有有效的字符串 URL 被设置
+        const validImages = prefillData.images.filter(img => typeof img === 'string' && img.trim().length > 0);
+        setImageRefs(validImages);
+      } else {
+        setImageRefs([]);
+      }
+      
       setAspectRatio('1:1'); 
     }
   }, [prefillData]);
@@ -88,7 +98,8 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `lumiere-output-${Date.now()}.${activeTab === 'video' ? 'mp4' : 'png'}`;
+      const extension = activeTab === 'video' ? 'mp4' : 'png';
+      a.download = formatDownloadName('app9', prompt, Date.now().toString(), extension);
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -163,7 +174,7 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
       <div className="flex gap-4 flex-wrap max-w-[220px]">
         {imageRefs.map((src, idx) => (
           <div key={idx} className="relative w-24 h-24 rounded-2xl border-2 border-indigo-500 overflow-hidden group shadow-lg ring-4 ring-indigo-500/10 shrink-0">
-            <img src={src} className="w-full h-full object-cover" />
+            <img src={src} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             <button 
               onClick={() => removeImageRef(idx)}
               className="absolute -top-1 -right-1 p-1.5 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-rose-600 z-10"
@@ -203,7 +214,7 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
           >
             {fixedSlots[s.id] ? (
               <div className="w-full h-full">
-                {s.isAudio ? <div className="w-full h-full flex items-center justify-center"><Zap className="w-8 h-8 text-indigo-500" /></div> : <img src={fixedSlots[s.id]!} className="w-full h-full object-cover" />}
+                {s.isAudio ? <div className="w-full h-full flex items-center justify-center"><Zap className="w-8 h-8 text-indigo-500" /></div> : <img src={fixedSlots[s.id]!} className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
                 <button onClick={(e) => { e.stopPropagation(); setFixedSlots(prev => ({ ...prev, [s.id]: null })); }} className="absolute top-1 right-1 p-1 bg-white/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:text-rose-500 shadow-sm"><Trash2 className="w-3 h-3" /></button>
               </div>
             ) : (
@@ -362,7 +373,7 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
                 {activeTab === 'video' ? (
                   <video src={resultUrl} className="w-full h-full object-cover" autoPlay loop muted controls />
                 ) : (
-                  <img src={resultUrl} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                  <img src={resultUrl} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" referrerPolicy="no-referrer" />
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-6 backdrop-blur-[3px]">
                   <button 
@@ -420,7 +431,7 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
             {activeTab === 'video' ? (
               <video src={resultUrl} className="max-w-full max-h-[85vh] object-contain" autoPlay loop muted controls />
             ) : (
-              <img src={resultUrl} className="max-w-full max-h-[85vh] object-contain" />
+              <img src={resultUrl} className="max-w-full max-h-[85vh] object-contain" referrerPolicy="no-referrer" />
             )}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
               <button 
