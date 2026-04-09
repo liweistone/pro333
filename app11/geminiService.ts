@@ -99,15 +99,14 @@ export const generatePlan = async (productSpecs: string, imagesBase64?: string[]
   const selectedTemplate = style === 'scroll' ? TEMPLATE_SCROLL : TEMPLATE_C4D;
 
   // 任务1：策略大脑 - 负责纯文本的市场分析
-  // 结构优化：扁平化 SWOT 以减少嵌套导致的 JSON 语法错误
   const strategyInstruction = `你是一位享誉业界的中国新春营销策划专家。
 请基于提供的产品信息，进行深度的市场与策略分析。
 
 # 核心任务：全案策略输出
-请生成非常详细的用户画像、SWOT分析、营销文案及新媒体策略。
+请生成精炼且到位的用户画像、SWOT分析、营销文案及新媒体策略。每个列表项请控制在 3-5 条以内，确保内容高质量且不冗长。
 
-# JSON 输出格式 (扁平化结构，严禁深层嵌套)
-请严格输出纯 JSON，不要包含 Markdown，不要包含任何思考过程（如 <think> 标签）。格式如下：
+# JSON 输出格式 (扁平化结构)
+请严格输出纯 JSON，不要包含 Markdown，格式如下：
 {
   "analysis": {
     "userPersona": "详细用户画像",
@@ -116,89 +115,153 @@ export const generatePlan = async (productSpecs: string, imagesBase64?: string[]
     "usageScenarios": ["场景1", "场景2"],
     "differentiation": ["差异化卖点1", "差异化卖点2"],
     "emotionalValue": "情感价值主张",
-    "swot_strengths": ["优势1", "优势2"],
+    "swot_strengths": ["优势1"],
     "swot_weaknesses": ["劣势1"],
     "swot_opportunities": ["机会1"],
     "swot_threats": ["威胁1"],
     "competitorWeakness": "竞品弱点分析",
-    "marketingCopy": ["爆款文案1", "爆款文案2"],
-    "salesChannels": ["渠道1", "渠道2"],
+    "marketingCopy": ["爆款文案1"],
+    "salesChannels": ["渠道1"],
     "promotionStrategy": "整体促销策略",
     "newMediaPlan": { "content": "内容方向", "strategy": "运营策略", "tactic": "执行战术" }
   }
 }`;
 
-  // 任务2：视觉大脑 - 负责所有Prompt的生成
-  const creativeInstruction = `你是一位顶尖的 AI 视觉艺术总监。
-请基于产品信息，为“2026马年”生成全套高质量绘图提示词。
+  // 任务2：核心视觉策划 (痛点与场景)
+  const coreVisualInstruction = `你是一位顶尖的 AI 视觉艺术总监。
+请基于产品信息，策划“痛点视觉”和“场景视觉”海报。
 
-# 视觉风格模板 (Template)
-请基于此模板结构来生成 \`fullPrompt\`，智能填充内容：
+# 视觉风格模板
 "${selectedTemplate}"
 
-# 核心任务：3大视觉板块
-1. **痛点视觉**：将解决用户痛点的过程可视化。
-2. **场景视觉**：产品在高频使用场景下的美学展示。
-3. **节日日历 (全量)**：针对春节、情人节、除夕、初一到初八，每天生成2个海报策划方案。
+# 核心任务
+1. **痛点视觉** (3个方案)：将解决用户痛点的过程可视化。
+2. **场景视觉** (3个方案)：产品在高频使用场景下的美学展示。
 
 # 关键规则
-- \`fullPrompt\` 必须是基于上述模板填充后的中文完整提示词。
-- 请直接输出 JSON，不要 Markdown，不要包含任何思考过程（如 <think> 标签）。
-- 严禁输出任何非 JSON 的文字。
+- \`fullPrompt\` 必须是基于模板填充后的完整中文提示词，且必须是单行文本，严禁包含任何换行符。
+- 直接输出 JSON，不要 Markdown。
 
 # JSON 输出格式
 {
   "painPointPrompts": {
     "category": "痛点视觉",
-    "prompts": [{ "planTitle": "方案名", "fullPrompt": "完整提示词..." }]
+    "prompts": [{ "planTitle": "方案名", "fullPrompt": "..." }]
   },
   "scenarioPrompts": [
     { "category": "场景类", "prompts": [{ "planTitle": "方案名", "fullPrompt": "..." }] }
-  ],
+  ]
+}`;
+
+  // 任务3：节日日历策划 - 前半段 (除夕至正月初三)
+  const calendarEarlyInstruction = `你是一位顶尖的 AI 视觉艺术总监。
+请基于产品信息，为“2026马年”生成前半段节日海报提示词。
+
+# 视觉风格模板
+"${selectedTemplate}"
+
+# 核心任务：节日日历 (前半段)
+针对以下节日：除夕、正月初一、正月初二、正月初三。
+每个节日生成 2 个精选的海报策划方案。
+
+# 关键规则
+- \`fullPrompt\` 必须是基于模板填充后的完整中文提示词，且必须是单行文本，严禁包含任何换行符。
+- 直接输出 JSON，不要 Markdown。
+
+# JSON 输出格式
+{
   "holidayPrompts": [
     { 
       "dateName": "除夕", 
-      "prompts": [
-        { "planTitle": "除夕方案1", "fullPrompt": "..." }, 
-        { "planTitle": "除夕方案2", "fullPrompt": "..." }
-      ] 
+      "prompts": [{ "planTitle": "方案名", "fullPrompt": "..." }] 
     },
-    { "dateName": "情人节", "prompts": [...] },
-    { "dateName": "正月初一", "prompts": [...] },
-    { "dateName": "正月初二", "prompts": [...] },
-    { "dateName": "正月初三", "prompts": [...] },
-    { "dateName": "正月初四", "prompts": [...] },
-    { "dateName": "正月初五", "prompts": [...] },
-    { "dateName": "正月初六", "prompts": [...] },
-    { "dateName": "正月初七", "prompts": [...] },
-    { "dateName": "正月初八", "prompts": [...] },    
-    { "dateName": "元宵节", "prompts": [...] }
+    ...
+  ]
+}`;
+
+  // 任务4：节日日历策划 - 后半段 (正月初四至元宵节)
+  const calendarLateInstruction = `你是一位顶尖的 AI 视觉艺术总监。
+请基于产品信息，为“2026马年”生成后半段节日海报提示词。
+
+# 视觉风格模板
+"${selectedTemplate}"
+
+# 核心任务：节日日历 (后半段)
+针对以下节日：正月初四、正月初五(财神)、正月初六、正月初七、正月初八(开工)、情人节、元宵节。
+每个节日生成 2 个精选的海报策划方案。
+
+# 关键规则
+- \`fullPrompt\` 必须是基于模板填充后的完整中文提示词，且必须是单行文本，严禁包含任何换行符。
+- 直接输出 JSON，不要 Markdown。
+
+# JSON 输出格式
+{
+  "holidayPrompts": [
+    { 
+      "dateName": "正月初五", 
+      "prompts": [{ "planTitle": "方案名", "fullPrompt": "..." }] 
+    },
+    ...
   ]
 }`;
 
   try {
-    const [strategyResult, creativeResult] = await Promise.all([
-      multimodalAdapter.generateStructuredContent({
+    // 采用串行+并行结合，确保逻辑一致性并分担负载
+    // 优化：仅选取前3张核心图片发送给 AI，降低负载
+    const limitedImages = imagesBase64?.slice(0, 3);
+
+    let strategyResult;
+    try {
+      strategyResult = await multimodalAdapter.generateStructuredContent({
         systemInstruction: strategyInstruction,
         prompt: `产品信息：\n${productSpecs}`,
         schema: null,
-        images: imagesBase64,
-        model: 'gemini-3-pro-preview',
-        timeout: 180000
-      }),
-      multimodalAdapter.generateStructuredContent({
-        systemInstruction: creativeInstruction,
-        prompt: `产品信息：\n${productSpecs}`,
-        schema: null,
-        images: imagesBase64,
-        model: 'gemini-3-pro-preview',
-        timeout: 180000
-      })
-    ]);
+        images: limitedImages,
+        model: 'gemini-3.1-pro'
+      });
+    } catch (e: any) {
+      console.error("Strategy Phase Error:", e);
+      throw new Error(`市场分析阶段失败: ${e.message}`);
+    }
+
+    // 基于策略结果，生成视觉内容
+    let coreResult, calendarEarlyResult, calendarLateResult;
+    try {
+      [coreResult, calendarEarlyResult, calendarLateResult] = await Promise.all([
+        multimodalAdapter.generateStructuredContent({
+          systemInstruction: coreVisualInstruction,
+          prompt: `产品信息：\n${productSpecs}\n\n市场定位：${strategyResult.analysis?.emotionalValue}`,
+          schema: null,
+          images: limitedImages,
+          model: 'gemini-3.1-pro'
+        }),
+        multimodalAdapter.generateStructuredContent({
+          systemInstruction: calendarEarlyInstruction,
+          prompt: `产品信息：\n${productSpecs}\n\n品牌调性：${strategyResult.analysis?.userPersona}`,
+          schema: null,
+          images: limitedImages,
+          model: 'gemini-3.1-pro'
+        }),
+        multimodalAdapter.generateStructuredContent({
+          systemInstruction: calendarLateInstruction,
+          prompt: `产品信息：\n${productSpecs}\n\n品牌调性：${strategyResult.analysis?.userPersona}`,
+          schema: null,
+          images: limitedImages,
+          model: 'gemini-3.1-pro'
+        })
+      ]);
+    } catch (e: any) {
+      console.error("Visual/Calendar Phase Error:", e);
+      throw new Error(`视觉策划或日历生成阶段失败: ${e.message}`);
+    }
 
     const mergedResult = {
       ...strategyResult,
-      ...creativeResult
+      ...coreResult,
+      holidayPrompts: [
+        ...(calendarEarlyResult.holidayPrompts || []),
+        ...(calendarLateResult.holidayPrompts || [])
+      ]
     };
     
     return normalizeResponse(mergedResult);

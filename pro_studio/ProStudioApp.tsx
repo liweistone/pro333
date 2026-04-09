@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
+import { formatZipName, formatInternalFileName } from '@/services/utils/namingUtils';
 
 import Header from '../app1/components/Header';
 import ImageConfig from '../app1/components/ImageConfig';
@@ -20,7 +21,7 @@ const ProStudioApp: React.FC = () => {
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'gemini-3-pro-image-preview'
+    model: 'gemini-3.1-flash-image-preview'
   });
 
   const [extendedConfig, setExtendedConfig] = useState<ExtendedConfigState>({
@@ -125,24 +126,69 @@ const ProStudioApp: React.FC = () => {
 
   const constructEnhancedPrompt = (basePrompt: string): string => {
     let enhancedPrompt = basePrompt.trim();
+    
+    // 1. 获取 3D 参数描述
     const poseKeywords = extendedConfig.poseEnabled ? getPoseDescription(extendedConfig.skeleton) : "";
     const angleKeywords = extendedConfig.cameraEnabled ? getCameraDescription(extendedConfig.camera) : "";
     let lightingKeywords = extendedConfig.lightingEnabled ? getLightingDescription(extendedConfig.lighting) : "";
     const expressionKeywords = extendedConfig.expressionEnabled ? getExpressionDescription(extendedConfig.expression) : "";
     const bodyKeywords = extendedConfig.bodyEnabled ? getBodyDescription(extendedConfig.bodyShape) : "";
 
-    if (extendedConfig.assets.faceImage) enhancedPrompt += ", swap face with the provided face reference";
-    if (extendedConfig.assets.clothingImage) enhancedPrompt += `, A high-fidelity photograph, ${clothingAnalysis || "wearing provided garment"}`;
-    if (extendedConfig.assets.backgroundImage) enhancedPrompt += ", replace background with the provided background reference";
+    // 2. 建立引用索引指令 (Reference Indexing)
+    let roleInstructions: string[] = [];
+    let currentIdx = 1;
 
+    if (referenceImages.length > 0) {
+      roleInstructions.push(`Image ${currentIdx} is the PRIMARY POSE and COMPOSITION base.`);
+      currentIdx++;
+    }
+
+    let faceIdx = -1;
+    if (extendedConfig.assets.faceImage) {
+      faceIdx = currentIdx;
+      roleInstructions.push(`Image ${faceIdx} is ONLY for face identity (swap face).`);
+      currentIdx++;
+    }
+
+    let clothingIdx = -1;
+    if (extendedConfig.assets.clothingImage) {
+      clothingIdx = currentIdx;
+      roleInstructions.push(`Image ${clothingIdx} is ONLY for the clothing style and texture.`);
+      currentIdx++;
+    }
+
+    let bgIdx = -1;
+    if (extendedConfig.assets.backgroundImage) {
+      bgIdx = currentIdx;
+      roleInstructions.push(`Image ${bgIdx} is ONLY for the background environment.`);
+      currentIdx++;
+    }
+
+    // 3. 合成增强指令 (Local Locking)
+    if (faceIdx !== -1) {
+      enhancedPrompt += `, swap face with the identity in Reference Image ${faceIdx}`;
+    }
+    if (clothingIdx !== -1) {
+      enhancedPrompt += `, precisely wear the garment from Reference Image ${clothingIdx}, ${clothingAnalysis || "high-fidelity clothing texture"}`;
+    }
+    if (bgIdx !== -1) {
+      enhancedPrompt += `, replace background with the environment in Reference Image ${bgIdx}`;
+    }
+
+    // 4. 替换 3D 占位符
     enhancedPrompt = enhancedPrompt
         .replace(/\[(selected_)?pose\]/g, poseKeywords)
         .replace(/\[(selected_)?angle\]/g, angleKeywords)
         .replace(/\[(selected_)?lighting\]/g, lightingKeywords)
         .replace(/\[(selected_)?expression\]/g, expressionKeywords)
         .replace(/\[(selected_)?body_shape\]/g, bodyKeywords);
+
+    // 5. 组合最终提示词
+    const finalPrompt = roleInstructions.length > 0 
+      ? `[INSTRUCTION: ${roleInstructions.join(' ')}] ${enhancedPrompt}`
+      : enhancedPrompt;
     
-    return enhancedPrompt.replace(/,+/g, ',').replace(/,\s*,/g, ',').replace(/\s\s+/g, ' ').replace(/,\s*$/g, '').trim();
+    return finalPrompt.replace(/,+/g, ',').replace(/,\s*,/g, ',').replace(/\s\s+/g, ' ').replace(/,\s*$/g, '').trim();
   };
 
   const startGeneration = async () => {
@@ -212,12 +258,12 @@ const ProStudioApp: React.FC = () => {
       await Promise.all(successfulItems.map(async (item) => {
         const response = await fetch(item.url!, { mode: 'cors' });
         const blob = await response.blob();
-        zip.file(`StudioPro-${item.id.slice(-4)}.png`, blob);
+        zip.file(formatInternalFileName('pro_studio', item.id), blob);
       }));
       const content = await zip.generateAsync({ type: 'blob' });
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(content);
-      link.download = `智拍大师-批量导出-${Date.now()}.zip`;
+      link.download = formatZipName('pro_studio');
       link.click();
     } catch (error: any) {
       alert(`打包失败: ${error.message}`);

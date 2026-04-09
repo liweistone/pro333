@@ -25,7 +25,7 @@ export enum ImageSize {
 
 export enum ModelType {
   GEMINI_3_1_FLASH = "gemini-3.1-flash-image-preview",
-  GEMINI_3_PRO = "gemini-3-pro-image-preview"
+  GEMINI_3_PRO = "gemini-3.1-flash-image-preview"
 }
 
 export interface GeneratedImage {
@@ -38,12 +38,18 @@ export interface GeneratedImage {
   error?: string;
 }
 
+export enum VisualStyle {
+  MODEL = "模特展示",
+  PRODUCT = "产品包装"
+}
+
 export interface GenerationConfig {
   aspectRatio: AspectRatio;
   imageSize: ImageSize;
   model: ModelType;
   googleSearch: boolean;
   googleImageSearch: boolean;
+  visualStyle: VisualStyle;
 }
 
 /**

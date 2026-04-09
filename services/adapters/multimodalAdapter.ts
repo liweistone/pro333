@@ -1,24 +1,22 @@
-
-import { ApimartProvider } from '../providers/apimartProvider';
+import { GrsaiProvider } from '../providers/grsaiProvider';
+import { cleanModelResponse, fixTruncatedJSON } from '../utils/jsonUtils';
 
 /**
  * 多模态适配器
- * 适配 Apimart Native Gemini 格式响应，保持原有应用兼容性
+ * 适配 Grsai API (gemini-3.1-pro) 格式响应，保持原有应用兼容性
  */
 export class MultimodalAdapter {
-  private provider: ApimartProvider;
+  private provider: GrsaiProvider;
   
   constructor() {
-    this.provider = new ApimartProvider();
+    this.provider = new GrsaiProvider();
   }
 
   /**
    * 启发式 JSON 修复引擎 (Heuristic Repair Engine)
    */
   private heuristicRepair(text: string): string {
-    let repaired = text.trim();
-    repaired = repaired.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
-    return repaired;
+    return cleanModelResponse(text);
   }
 
   /**
@@ -30,7 +28,8 @@ export class MultimodalAdapter {
     try {
       return JSON.parse(text);
     } catch (e) {
-      const cleaned = this.heuristicRepair(text);
+      let cleaned = this.heuristicRepair(text);
+      cleaned = fixTruncatedJSON(cleaned);
       try {
         return JSON.parse(cleaned);
       } catch (e2) {
@@ -61,26 +60,16 @@ export class MultimodalAdapter {
     generationConfig?: any;
   }) {
     try {
-      const { systemInstruction, prompt, schema, images, model = 'gemini-3-pro-preview', generationConfig } = params;
+      const { systemInstruction, prompt, schema, images, model, generationConfig } = params;
       
-      const result = await this.provider.analyzeWithMultimodal(
+      const text = await this.provider.analyze({
         prompt,
         images,
+        systemInstruction,
         model,
-        {
-          ...generationConfig,
-          systemInstruction,
-          responseSchema: schema || undefined
-        }
-      );
-
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) {
-         if (result.promptFeedback?.blockReason) {
-             throw new Error(`请求被拦截: ${result.promptFeedback.blockReason}`);
-         }
-         throw new Error("引擎未返回有效数据");
-      }
+        temperature: generationConfig?.temperature,
+        maxTokens: generationConfig?.maxOutputTokens
+      });
 
       return this.safeParseJson(text);
     } catch (error: any) {
@@ -93,8 +82,10 @@ export class MultimodalAdapter {
    */
   async analyzeProduct(text: string, imageBase64?: string) {
     try {
-      const result = await this.provider.analyzeWithMultimodal(text, imageBase64);
-      const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const textContent = await this.provider.analyze({
+        prompt: text,
+        images: imageBase64 ? [imageBase64] : []
+      });
       return { reasoning: textContent, imagePrompt: '', videoPrompt: '' };
     } catch (error: any) {
       throw new Error(`多模态分析失败: ${error.message}`);
@@ -106,8 +97,11 @@ export class MultimodalAdapter {
    */
   async analyzeContent(content: string, image?: string, model?: string) {
     try {
-      const result = await this.provider.analyzeWithMultimodal(content, image, model);
-      const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const textContent = await this.provider.analyze({
+        prompt: content,
+        images: image ? [image] : [],
+        model
+      });
       return { choices: [{ message: { content: textContent } }], content: textContent };
     } catch (error: any) {
       throw new Error(`内容分析失败: ${error.message}`);

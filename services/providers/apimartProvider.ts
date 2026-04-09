@@ -1,6 +1,8 @@
 
 import { API_CONFIG } from '@/apiConfig';
 
+import { GrsaiProvider } from './grsaiProvider';
+
 interface ApimartConfig {
   baseUrl: string;
 }
@@ -18,15 +20,18 @@ interface GenerationConfig {
  */
 export class ApimartProvider {
   private config: ApimartConfig;
+  private grsaiProvider: GrsaiProvider;
 
   constructor() {
     this.config = {
       baseUrl: 'https://api.apimart.ai'
     };
+    this.grsaiProvider = new GrsaiProvider();
   }
 
   /**
    * 图像生成 (异步模式)
+   * 统一逻辑：默认使用 gemini-3.1-flash-image-preview，失败则回退到 gemini-3.1-flash-image-preview-official
    */
   async generateImage(
     prompt: string,
@@ -36,22 +41,43 @@ export class ApimartProvider {
     const url = `${this.config.baseUrl}/v1/images/generations`;
     const targetRatio = config.aspectRatio || config.size || '1:1';
     
-    const payload = {
-      model: config.model || 'gemini-3-pro-image-preview',
+    // 默认模型
+    const primaryModel = config.model || 'gemini-3.1-flash-image-preview';
+    const fallbackModel = 'gemini-3.1-flash-image-preview-official';
+
+    const getPayload = (model: string) => ({
+      model,
       prompt,
       size: targetRatio,
       aspect_ratio: targetRatio,
       resolution: config.resolution || '1K',
       n: 1,
-      image_urls: imageUrls.length > 0 ? imageUrls.map(url => ({ url })) : undefined
-    };
+      image_urls: imageUrls.length > 0 ? imageUrls : undefined
+    });
 
-    const response = await this.makeRequest(url, payload);
-    const data = response.data || response;
-    if (Array.isArray(data) && data[0]?.task_id) {
-      return data[0].task_id;
+    try {
+      const response = await this.makeRequest(url, getPayload(primaryModel));
+      const data = response.data || response;
+      if (Array.isArray(data) && data[0]?.task_id) {
+        return data[0].task_id;
+      }
+      throw new Error(response.error?.message || response.msg || '图像生成任务创建失败');
+    } catch (error: any) {
+      // 如果主模型失败且不是备用模型本身，则尝试备用模型
+      if (primaryModel !== fallbackModel) {
+        console.warn(`主模型 ${primaryModel} 生成失败，尝试备用模型 ${fallbackModel}: ${error.message}`);
+        try {
+          const response = await this.makeRequest(url, getPayload(fallbackModel));
+          const data = response.data || response;
+          if (Array.isArray(data) && data[0]?.task_id) {
+            return data[0].task_id;
+          }
+        } catch (fallbackError: any) {
+          throw new Error(`主模型失败: ${error.message}; 备用模型失败: ${fallbackError.message}`);
+        }
+      }
+      throw error;
     }
-    throw new Error(response.error?.message || response.msg || '图像生成任务创建失败');
   }
 
   async generateVideo(
@@ -77,37 +103,37 @@ export class ApimartProvider {
   }
 
   /**
-   * 增强型多模态分析：支持单图或多图数组
+   * 增强型多模态分析：已迁移至 Grsai 统一驱动
    */
   async analyzeWithMultimodal(
     text: string,
     images?: string | string[],
-    model: string = 'gemini-3-pro-preview',
+    model: string = 'gemini-3.1-pro',
     generationConfig?: any
   ): Promise<any> {
-    const url = `${this.config.baseUrl}/v1beta/models/${model}:generateContent`;
-    const parts: any[] = [{ text }];
-    
     const imageArray = Array.isArray(images) ? images : (images ? [images] : []);
     
-    imageArray.forEach(imageBase64 => {
-      const data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
-      const mimeType = imageBase64.includes(';') ? imageBase64.match(/:(.*?);/)?.[1] || 'image/jpeg' : 'image/jpeg';
-      parts.push({ inlineData: { mimeType, data } });
-    });
+    try {
+      const content = await this.grsaiProvider.analyze({
+        prompt: text,
+        images: imageArray,
+        systemInstruction: generationConfig?.systemInstruction,
+        model,
+        temperature: generationConfig?.temperature,
+        maxTokens: generationConfig?.maxOutputTokens
+      });
 
-    const payload = { 
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        ...generationConfig
-      },
-      systemInstruction: generationConfig?.systemInstruction ? {
-        parts: [{ text: generationConfig.systemInstruction }]
-      } : undefined
-    };
-    
-    return await this.makeRequest(url, payload);
+      // 模拟 Apimart 的响应格式以保持向下兼容
+      return {
+        candidates: [{
+          content: {
+            parts: [{ text: content }]
+          }
+        }]
+      };
+    } catch (error: any) {
+      throw new Error(`分析请求失败: ${error.message}`);
+    }
   }
 
   async getTaskStatus(taskId: string): Promise<any> {

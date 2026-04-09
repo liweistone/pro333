@@ -28,7 +28,7 @@ const PAGE_SIZE = 24;
 const BASE_PROD_URL = 'https://aideator.top';
 
 interface App7PresetHubProps {
-  onUsePreset?: (data: { prompt: string; image: string }) => void;
+  onUsePreset?: (data: { prompt: string; negative?: string; images: string[] }) => void;
 }
 
 const App7PresetHub: React.FC<App7PresetHubProps> = ({ onUsePreset }) => {
@@ -149,15 +149,49 @@ const App7PresetHub: React.FC<App7PresetHubProps> = ({ onUsePreset }) => {
     return () => observer.disconnect();
   }, [hasMore, presets.length]);
 
-  const handleUseInspiration = (preset: Preset) => {
-    if (onUsePreset) {
-      onUsePreset({
-        prompt: preset.positive,
-        image: getImageUrl(preset.image)
-      });
+  const handleUseInspiration = async (preset: Preset) => {
+    try {
+      // 1. 调用接口获取该预设的所有效果图
+      const response = await fetch(getApiUrl(`/api/presets/${preset.id}/effect-images`));
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const rawData = await response.json();
+      
+      // 2. 健壮性解析：检查多种可能的返回结构 (直接数组, .data, .results)
+      const list = Array.isArray(rawData) 
+        ? rawData 
+        : (rawData.data || rawData.results || rawData.images || rawData.presets || []);
+      
+      // 3. 提取并转换 URL：按顺序读取，支持多种字段名 (url, image_url, image, path)
+      const effectUrls = list
+        .map((img: any) => {
+          const path = img.url || img.image_url || img.image || img.path;
+          return path ? getImageUrl(path) : null;
+        })
+        .filter(Boolean) as string[]; // 过滤掉无效路径
+
+      // 4. 将数据传递给大厅 (排除封面图，仅使用效果图)
+      if (onUsePreset) {
+        onUsePreset({
+          prompt: preset.positive,
+          negative: preset.negative || undefined,
+          images: effectUrls // 保持接口返回的原始顺序
+        });
+      }
+      
+      // 同时上报使用统计
+      fetch(getApiUrl(`/api/presets/${preset.id}/use`), { method: 'POST' }).catch(() => {});
+    } catch (error) {
+      console.error("获取效果图失败，执行降级逻辑:", error);
+      // 降级处理：如果获取失败，则不填充参考图
+      if (onUsePreset) {
+        onUsePreset({ 
+          prompt: preset.positive, 
+          negative: preset.negative || undefined,
+          images: [] 
+        });
+      }
     }
-    // 同时上报使用统计
-    fetch(getApiUrl(`/api/presets/${preset.id}/use`), { method: 'POST' }).catch(() => {});
   };
 
   return (

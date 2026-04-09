@@ -1,7 +1,7 @@
 
 import { AspectRatio, ImageSize, ApimartApiResponse, ApimartTaskStatusResponse, GenerationConfig } from "./types";
 
-const BASE_URL = "/api";
+const BASE_URL = "/api/v1";
 
 /**
  * 在 Apimart 平台上创建一个新的图像生成任务。

@@ -52,7 +52,7 @@ export class LumiService {
     return await provider.generateImage(
       `Commercial photography, high-end lighting, ${userInsight}`,
       { 
-        model: 'gemini-3-pro-image-preview', 
+        model: 'gemini-3.1-flash-image-preview', 
         resolution: config.imageResolution,
         aspectRatio: ratio 
       },

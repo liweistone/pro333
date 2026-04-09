@@ -8,6 +8,7 @@ import SmartBatchGenerator from '../app2/components/SmartBatchGenerator';
 import { AspectRatio, ImageSize, GeneratedImage, GenerationConfig } from '../app2/types';
 import { createGenerationTask, checkTaskStatus } from '../app2/visionService';
 import JSZip from 'jszip';
+import { formatZipName, formatInternalFileName, formatDownloadName } from '@/services/utils/namingUtils';
 import { Download, Package, Trash2, Loader2, Layers } from 'lucide-react';
 
 const BatchMasterApp: React.FC = () => {
@@ -16,7 +17,7 @@ const BatchMasterApp: React.FC = () => {
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'gemini-3-pro-image-preview'
+    model: 'gemini-3.1-flash-image-preview'
   });
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [results, setResults] = useState<GeneratedImage[]>([]);
@@ -134,8 +135,7 @@ const BatchMasterApp: React.FC = () => {
           if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
           
           const blob = await response.blob();
-          const safeBaseName = sanitizeFilename(item.prompt) || '电商主图';
-          const fileName = `${safeBaseName}-${item.id.slice(-4)}.png`;
+          const fileName = formatInternalFileName('batch_master', item.id);
           zip.file(fileName, blob);
         } catch (e) {
           console.error(`下载图片失败: ${item.url}`, e);
@@ -147,7 +147,7 @@ const BatchMasterApp: React.FC = () => {
       const blobUrl = window.URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `裂变大师-批量打包-${new Date().getTime()}.zip`;
+      link.download = formatZipName('batch_master');
       link.click();
       window.URL.revokeObjectURL(blobUrl);
     } catch (error: any) {
@@ -168,8 +168,7 @@ const BatchMasterApp: React.FC = () => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        const safeBaseName = sanitizeFilename(item.prompt) || '电商主图';
-        link.download = `${safeBaseName}-${item.id.slice(-4)}.png`;
+        link.download = formatDownloadName('batch_master', item.prompt, item.id);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

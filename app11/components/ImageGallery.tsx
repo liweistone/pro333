@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GeneratedImage, AspectRatio } from '../types';
 import { Eye, Download, RefreshCcw, AlertCircle, CheckCircle2, ImageIcon, X } from 'lucide-react';
+import { formatDownloadName } from '@/services/utils/namingUtils';
 
 interface ImageGalleryProps {
   items: GeneratedImage[];
@@ -21,9 +22,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
       const link = document.createElement('a');
       link.href = blobUrl;
       
-      // 生成友好的文件名
-      const safePrompt = item.prompt.slice(0, 15).replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '-');
-      const fileName = `grsai-${safePrompt}-${item.id.slice(-4)}.png`;
+      const fileName = formatDownloadName('app11', item.prompt, item.id);
       
       link.download = fileName;
       document.body.appendChild(link);

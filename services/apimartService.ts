@@ -1,5 +1,6 @@
 
 import { AnalysisResult, TaskResponse, GenerationConfig } from '../types';
+import { GrsaiProvider } from './providers/grsaiProvider';
 
 const BASE_URL = 'https://api.apimart.ai';
 const HARDCODED_KEY = 'sk-FO0wuJD4IxbThtg7nkBkBhBVFDM2LTStEHouSymNTA7H1Oya';
@@ -19,6 +20,11 @@ const fileToBase64 = (file: File): Promise<string> => {
 
 export class APIMartService {
   private apiKey: string = HARDCODED_KEY;
+  private grsaiProvider: GrsaiProvider;
+
+  constructor() {
+    this.grsaiProvider = new GrsaiProvider();
+  }
 
   private get headers() {
     return {
@@ -40,40 +46,26 @@ export class APIMartService {
     return core;
   }
 
-  // 1. 视觉分析：识别结构，构思提示词
+  // 1. 视觉分析：识别结构，构思提示词 (已迁移至 Grsai)
   async analyzeImage(file: File, userInstruction: string): Promise<AnalysisResult> {
     const base64Data = await fileToBase64(file);
-    const url = `${BASE_URL}/v1beta/models/gemini-2.5-pro:generateContent`;
+    const prompt = `你是一位顶级工业设计视觉导演。请分析此图并严格输出 JSON 字符串（不要包含任何 Markdown 代码块标签）：{"reasoning":"分析产品结构及光效逻辑","imagePrompt":"用于重绘发光质感图的英文提示词，必须包含 'KEEP ORIGINAL PRODUCT GEOMETRY UNCHANGED'","videoPrompt":"用于 Sora 渲染动态光影流转的英文提示词"}\n用户要求：${userInstruction}`;
     
-    const payload = {
-      contents: [{
-        role: "user",
-        parts: [
-          { text: `你是一位顶级工业设计视觉导演。请分析此图并严格输出 JSON 字符串（不要包含任何 Markdown 代码块标签）：{"reasoning":"分析产品结构及光效逻辑","imagePrompt":"用于重绘发光质感图的英文提示词，必须包含 'KEEP ORIGINAL PRODUCT GEOMETRY UNCHANGED'","videoPrompt":"用于 Sora 渲染动态光影流转的英文提示词"}\n用户要求：${userInstruction}` },
-          { inlineData: { mimeType: file.type, data: base64Data } }
-        ]
-      }]
-    };
-
-    const response = await fetch(url, { method: 'POST', headers: this.headers, body: JSON.stringify(payload) });
-    const res = await response.json();
-    
-    const data = this.extractResponseData(res);
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || res.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!text) throw new Error("AI 导演解析失败，请检查网络或 API Key。");
-    
-    const jsonMatch = text.replace(/```json/g, '').replace(/```/g, '').trim().match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("AI 导演返回格式解析失败。");
-    
-    return JSON.parse(jsonMatch[0]);
+    try {
+      return await this.grsaiProvider.analyzeAndParse({
+        prompt,
+        images: [base64Data]
+      });
+    } catch (error: any) {
+      throw new Error(`AI 导演解析失败: ${error.message}`);
+    }
   }
 
   // 2. 生成静态发光参考图 (高保真一致性模式)
   async startImageGeneration(prompt: string, originalFile: File): Promise<string> {
     const base64Data = await fileToBase64(originalFile);
     // 使用 generateContent 模式以支持图片参考输入
-    const url = `${BASE_URL}/v1beta/models/gemini-3-pro-image-preview:generateContent`;
+    const url = `${BASE_URL}/v1beta/models/gemini-3.1-flash-image-preview:generateContent`;
     
     const payload = {
       contents: [{

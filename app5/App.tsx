@@ -4,10 +4,11 @@ import Header from './components/Header';
 import ImageConfig from './components/ImageConfig';
 import PromptInput from './components/PromptInput';
 import ImageGallery from './components/ImageGallery';
-import { AspectRatio, ImageSize, GeneratedImage, GenerationConfig, ModelType } from './types';
+import { AspectRatio, ImageSize, GeneratedImage, GenerationConfig, ModelType, VisualStyle } from './types';
 import { createGenerationTask, checkTaskStatus } from './grsaiService';
 import { optimizePlanningScheme } from './aiAnalysisService';
 import JSZip from 'jszip';
+import { formatZipName, formatInternalFileName, formatDownloadName } from '@/services/utils/namingUtils';
 
 const App: React.FC = () => {
   const [planningText, setPlanningText] = useState('');
@@ -17,7 +18,8 @@ const App: React.FC = () => {
     imageSize: ImageSize.K1,
     model: ModelType.GEMINI_3_1_FLASH,
     googleSearch: false,
-    googleImageSearch: false
+    googleImageSearch: false,
+    visualStyle: VisualStyle.MODEL
   });
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [results, setResults] = useState<GeneratedImage[]>([]);
@@ -31,7 +33,8 @@ const App: React.FC = () => {
   /**
    * 处理 AI 优化策划方案逻辑
    */
-  const handleAiOptimize = async () => {
+  const handleAiOptimize = async (e: React.MouseEvent) => {
+    e.preventDefault();
     if (!planningText.trim()) {
       alert('请先输入策划方案内容');
       return;
@@ -39,9 +42,10 @@ const App: React.FC = () => {
     setIsOptimizing(true);
     try {
       // 调用第三方 API 细化方案，并将结果同步到提示词框
-      const refinedPrompts = await optimizePlanningScheme(planningText, referenceImages[0]);
+      const refinedPrompts = await optimizePlanningScheme(planningText, config.visualStyle, referenceImages[0]);
       setPromptsText(refinedPrompts);
     } catch (error: any) {
+      console.error("AI 策划优化失败:", error);
       alert(`AI 策划优化失败: ${error.message}`);
     } finally {
       setIsOptimizing(false);
@@ -146,7 +150,7 @@ const App: React.FC = () => {
         const link = document.createElement('a');
         link.style.display = 'none';
         link.href = url;
-        const fileName = `电商图-${item.prompt.slice(0, 10).replace(/\s+/g, '-')}-${item.id.slice(-4)}.png`;
+        const fileName = formatDownloadName('app5', item.prompt, item.id);
         link.download = fileName;
         document.body.appendChild(link);
         link.click();
@@ -174,13 +178,13 @@ const App: React.FC = () => {
       const downloadPromises = successfulItems.map(async (item) => {
         const response = await fetch(item.url!, { mode: 'cors' });
         const blob = await response.blob();
-        zip.file(`电商图片-${item.id.slice(-4)}.png`, blob);
+        zip.file(formatInternalFileName('app5', item.id), blob);
       });
       await Promise.all(downloadPromises);
       const content = await zip.generateAsync({ type: "blob" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(content);
-      link.download = `批量导出-${Date.now()}.zip`;
+      link.download = formatZipName('app5');
       link.click();
     } catch (error: any) {
       alert(`打包失败: ${error.message}`);
@@ -231,6 +235,7 @@ const App: React.FC = () => {
                 className="w-full h-32 p-3 text-xs bg-white border border-indigo-100 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none mb-3 placeholder:text-slate-300"
               />
               <button
+                type="button"
                 onClick={handleAiOptimize}
                 disabled={isOptimizing || !planningText.trim()}
                 className={`w-full py-2 px-4 rounded-lg text-xs font-bold text-white transition-all flex items-center justify-center gap-2 ${
@@ -249,6 +254,7 @@ const App: React.FC = () => {
             </div>
 
             <button
+              type="button"
               onClick={startGeneration}
               disabled={isGenerating || !promptsText.trim()}
               className={`w-full mt-6 py-4 px-4 rounded-xl font-bold text-white transition-all shadow-lg ${

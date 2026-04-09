@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { AspectRatio, ImageSize, GenerationConfig, ModelType } from '../types';
+import { AspectRatio, ImageSize, GenerationConfig, ModelType, VisualStyle } from '../types';
 
 interface ImageConfigProps {
   config: GenerationConfig;
@@ -104,6 +103,27 @@ const ImageConfig: React.FC<ImageConfigProps> = ({
         </div>
       </div>
 
+      {/* 视觉风格 */}
+      <div>
+        <label className="text-sm font-bold text-slate-700 block mb-2">视觉风格</label>
+        <div className="grid grid-cols-2 gap-2">
+          {Object.values(VisualStyle).map((style) => (
+            <button
+              type="button"
+              key={style}
+              onClick={() => onConfigChange({ ...config, visualStyle: style })}
+              className={`py-2 px-1 text-xs rounded-lg border transition-all font-bold ${
+                config.visualStyle === style
+                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400'
+              }`}
+            >
+              {style}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 搜索增强选项 */}
       <div className="space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
         <label className="text-sm font-bold text-slate-700 block">搜索增强 (Google Search)</label>
@@ -195,6 +215,7 @@ const ImageConfig: React.FC<ImageConfigProps> = ({
             
             return (
               <button
+                type="button"
                 key={ratio}
                 disabled={isDisabled}
                 onClick={() => onConfigChange({ ...config, aspectRatio: ratio })}
@@ -219,6 +240,7 @@ const ImageConfig: React.FC<ImageConfigProps> = ({
         <div className="grid grid-cols-4 gap-2">
           {Object.values(ImageSize).map((size) => (
             <button
+              type="button"
               key={size}
               onClick={() => onConfigChange({ ...config, imageSize: size })}
               className={`py-2 px-1 text-[10px] rounded-lg border transition-all font-bold ${

@@ -15,7 +15,7 @@ export const createGenerationTask = async (
   referenceImages: string[] = []
 ): Promise<string> => {
   try {
-    // 调用大项目 ImageAdapter，它内部已锁定为 gemini-3-pro-image-preview
+    // 调用大项目 ImageAdapter，它内部已锁定为 gemini-3.1-flash-image-preview
     return await imageAdapter.createGenerationTask(
       prompt,
       {

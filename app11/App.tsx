@@ -6,7 +6,7 @@ import ImageGallery from './components/ImageGallery';
 import { 
   Upload, Send, Image as ImageIcon, Zap,
   ChevronRight, Loader2, Copy, CheckCircle2, Download, 
-  ArrowRightLeft, Calendar, Sparkles, Play, PlusCircle, Palette, Box
+  ArrowRightLeft, Calendar, Sparkles, Play, PlusCircle, Palette, Box, X, Trash2
 } from 'lucide-react';
 
 const MODELS = [
@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [specs, setSpecs] = useState('');
   const [analysisImages, setAnalysisImages] = useState<string[]>([]);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisStatus, setAnalysisStatus] = useState<string>('');
   const [analysisResult, setAnalysisResult] = useState<AppResponse | null>(null);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<'analysis' | 'prompts'>('analysis');
   const [activePromptSubTab, setActivePromptSubTab] = useState<'pain' | 'scenario' | 'holiday'>('holiday');
@@ -125,11 +126,36 @@ const App: React.FC = () => {
     setIsGenerating(false);
   };
 
+  const handleAnalysisImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files) as File[];
+      const remainingCount = 3 - analysisImages.length;
+      if (remainingCount <= 0) {
+        alert('最多只能添加 3 张分析图');
+        return;
+      }
+      
+      const filesToProcess = files.slice(0, remainingCount);
+      
+      try {
+        const promises = filesToProcess.map(file => compressImage(file));
+        const urls = await Promise.all(promises);
+        setAnalysisImages(prev => [...prev, ...urls].slice(0, 20));
+      } catch (err) {
+        console.error("Image compression failed", err);
+        alert("部分图片处理失败，请重试");
+      }
+    }
+  };
+
   const handleAnalysisSubmit = async () => {
     if (!specs.trim()) { alert('请提供产品参数或说明书内容'); return; }
     setAnalysisLoading(true);
+    setAnalysisStatus('正在深度分析市场与品牌定位...');
     try {
+      // 模拟阶段性反馈 (虽然 generatePlan 内部是并行的，但我们可以通过 UI 提示让用户感知过程)
       const data = await generatePlan(specs, analysisImages, posterStyle);
+      setAnalysisStatus('方案策划已完成！');
       setAnalysisResult(data);
       setActiveAnalysisTab('prompts');
       setActivePromptSubTab('holiday');
@@ -137,6 +163,7 @@ const App: React.FC = () => {
       alert(error.message || '生成方案失败，请稍后重试');
     } finally {
       setAnalysisLoading(false);
+      setAnalysisStatus('');
     }
   };
 
@@ -191,19 +218,63 @@ const App: React.FC = () => {
           <div className="grid lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-6">
-                <h2 className="font-bold flex items-center gap-2 text-slate-800">产品画像输入</h2>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-slate-700">产品实拍图 ({analysisImages.length}/3)</label>
+                  {analysisImages.length > 0 && (
+                    <button 
+                      onClick={() => setAnalysisImages([])} 
+                      className="text-[10px] text-red-500 font-bold hover:underline flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> 清空全部
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-4">
-                  <div className="min-h-[140px] border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-red-300 transition-all overflow-hidden p-2" onClick={() => fileInputRef.current?.click()}>
-                    <input type="file" hidden ref={fileInputRef} multiple onChange={async (e) => {
-                      if(e.target.files) {
-                        const filesArray = Array.from(e.target.files) as File[];
-                        const urls = await Promise.all(filesArray.map(f => compressImage(f)));
-                        setAnalysisImages(prev => [...prev, ...urls]);
-                      }
-                    }} />
-                    {analysisImages.length === 0 ? <><Upload className="w-8 h-8 text-slate-300 mb-2" /><span className="text-xs text-slate-400 font-medium">点击上传产品细节图</span></> : 
-                      <div className="grid grid-cols-4 gap-2 w-full">{analysisImages.map((u, i) => <img key={i} src={u} className="aspect-square object-cover rounded-lg ring-1 ring-slate-100 shadow-sm" />)}</div>
-                    }
+                  <div 
+                    className={`relative min-h-[140px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden p-2 ${
+                      analysisImages.length > 0 ? 'border-red-100 bg-slate-50/30' : 'border-slate-200 hover:bg-slate-50 hover:border-red-300'
+                    }`} 
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input 
+                      type="file" 
+                      hidden 
+                      ref={fileInputRef} 
+                      multiple 
+                      onChange={handleAnalysisImageUpload} 
+                      accept="image/*" 
+                    />
+                    {analysisImages.length === 0 ? (
+                      <>
+                        <Upload className="w-8 h-8 text-slate-300 mb-2" />
+                        <span className="text-xs text-slate-400 font-medium">点击上传产品细节图</span>
+                        <span className="text-[10px] text-slate-300 mt-1">支持多选，最多3张</span>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2 w-full">
+                        {analysisImages.map((u, i) => (
+                          <div key={i} className="relative aspect-square group/img">
+                            <img src={u} className="w-full h-full object-cover rounded-lg ring-1 ring-slate-100 shadow-sm" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                              <button 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  setAnalysisImages(prev => prev.filter((_, idx) => idx !== i)); 
+                                }} 
+                                className="bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        {analysisImages.length < 3 && (
+                          <div className="aspect-square flex items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-white hover:border-red-300 transition-colors">
+                            <PlusCircle className="w-5 h-5 text-slate-300" />
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <textarea 
                     value={specs} onChange={(e) => setSpecs(e.target.value)} 
@@ -239,8 +310,20 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <button onClick={handleAnalysisSubmit} disabled={analysisLoading} className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-200 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2 group">
-                    {analysisLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>立即生成马年海报全案 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>}
+                  <button onClick={handleAnalysisSubmit} disabled={analysisLoading} className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-200 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-red-100 flex flex-col items-center justify-center gap-1 group">
+                    {analysisLoading ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>正在智造全案...</span>
+                        </div>
+                        <span className="text-[10px] font-normal opacity-70">{analysisStatus}</span>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        立即生成马年海报全案 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    )}
                   </button>
                 </div>
               </div>

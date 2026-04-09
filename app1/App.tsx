@@ -20,7 +20,7 @@ const App: React.FC = () => {
   const [config, setConfig] = useState<GenerationConfig>({
     aspectRatio: AspectRatio.SQUARE,
     imageSize: ImageSize.K1,
-    model: 'gemini-3-pro-image-preview'
+    model: 'gemini-3.1-flash-image-preview'
   });
 
   const [extendedConfig, setExtendedConfig] = useState<ExtendedConfigState>({

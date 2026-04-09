@@ -27,7 +27,7 @@ export class ImageAdapter {
       const imageConfig = {
         size: config.aspectRatio || config.size || '1:1',
         resolution: config.imageSize || config.resolution || '1K',
-        model: 'gemini-3-pro-image-preview' 
+        model: 'gemini-3.1-flash-image-preview' 
       };
       
       // 调用Apimart服务生成图像
