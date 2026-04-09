@@ -20,7 +20,7 @@ export const createGenerationTask = async (
     {
       aspectRatio: config.aspectRatio,
       imageSize: config.imageSize,
-      model: 'gemini-3-pro-image-preview'
+      model: 'gemini-3.1-flash-image-preview'
     },
     referenceImages
   );
@@ -60,40 +60,100 @@ const CREATIVE_SYSTEM_INSTRUCTION = `你是一位顶尖的 AI 视觉总监。
 请以纯 JSON 格式输出。`;
 
 /**
+ * 标准化 AI 响应，确保数据结构完整
+ */
+const normalizeResponse = (data: any): AppResponse => {
+  const defaultAnalysis: MarketAnalysis = {
+    userPersona: "大众消费者",
+    userNeeds: ["高品质", "实用性"],
+    painPoints: ["价格敏感", "品质担忧"],
+    usageScenarios: ["日常使用", "礼赠"],
+    differentiation: ["极致性价比", "设计感"],
+    emotionalValue: "生活品质提升",
+    swot: {
+      strengths: ["核心技术"],
+      weaknesses: ["品牌知名度待提升"],
+      opportunities: ["消费升级"],
+      threats: ["同类竞争"]
+    },
+    competitorWeakness: "服务响应慢",
+    marketingCopy: ["品质生活，从这里开始"],
+    salesChannels: ["抖音", "小红书"],
+    promotionStrategy: "全渠道覆盖",
+    newMediaPlan: {
+      content: "生活方式分享",
+      strategy: "KOL 种草",
+      tactic: "短视频矩阵"
+    }
+  };
+
+  const defaultPromptSet: PromptSet = {
+    category: "默认方案",
+    prompts: [
+      { planTitle: "经典展示", fullPrompt: "A high-quality product shot of the item on a clean background, studio lighting, 8k resolution." }
+    ]
+  };
+
+  return {
+    analysis: data?.analysis || defaultAnalysis,
+    painPointPrompts: data?.painPointPrompts || defaultPromptSet,
+    scenarioPrompts: Array.isArray(data?.scenarioPrompts) ? data.scenarioPrompts : [defaultPromptSet]
+  };
+};
+
+/**
  * 任务 A：生成市场策略报告
  */
 const generateStrategyReport = async (productSpecs: string, images?: string[]): Promise<MarketAnalysis> => {
-  return await multimodalAdapter.generateStructuredContent({
-    systemInstruction: STRATEGY_SYSTEM_INSTRUCTION,
-    prompt: `产品详情：\n${productSpecs}`,
-    schema: {
-      type: Type.OBJECT,
-      properties: {
-        analysis: {
-          type: Type.OBJECT,
-          properties: {
-            userPersona: { type: Type.STRING },
-            userNeeds: { type: Type.ARRAY, items: { type: Type.STRING } },
-            painPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
-            usageScenarios: { type: Type.ARRAY, items: { type: Type.STRING } },
-            differentiation: { type: Type.ARRAY, items: { type: Type.STRING } },
-            emotionalValue: { type: Type.STRING },
-            swot: {
-              type: Type.OBJECT,
-              properties: {
-                strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-                weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
-                opportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
-                threats: { type: Type.ARRAY, items: { type: Type.STRING } }
+  try {
+    const result = await multimodalAdapter.generateStructuredContent({
+      systemInstruction: STRATEGY_SYSTEM_INSTRUCTION,
+      prompt: `产品详情：\n${productSpecs}`,
+      schema: {
+        type: Type.OBJECT,
+        properties: {
+          analysis: {
+            type: Type.OBJECT,
+            properties: {
+              userPersona: { type: Type.STRING },
+              userNeeds: { type: Type.ARRAY, items: { type: Type.STRING } },
+              painPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
+              usageScenarios: { type: Type.ARRAY, items: { type: Type.STRING } },
+              differentiation: { type: Type.ARRAY, items: { type: Type.STRING } },
+              emotionalValue: { type: Type.STRING },
+              swot: {
+                type: Type.OBJECT,
+                properties: {
+                  strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  opportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  threats: { type: Type.ARRAY, items: { type: Type.STRING } }
+                }
+              },
+              competitorWeakness: { type: Type.STRING },
+              marketingCopy: { type: Type.ARRAY, items: { type: Type.STRING } },
+              salesChannels: { type: Type.ARRAY, items: { type: Type.STRING } },
+              promotionStrategy: { type: Type.STRING },
+              newMediaPlan: {
+                type: Type.OBJECT,
+                properties: {
+                  content: { type: Type.STRING },
+                  strategy: { type: Type.STRING },
+                  tactic: { type: Type.STRING }
+                }
               }
             }
           }
         }
-      }
-    },
-    images,
-    model: 'gemini-3-pro-preview'
-  }).then(res => res.analysis);
+      },
+      images,
+      model: 'gemini-3.1-pro'
+    });
+    return result.analysis;
+  } catch (e) {
+    console.error("Strategy Report Error:", e);
+    throw e;
+  }
 };
 
 /**
@@ -101,37 +161,41 @@ const generateStrategyReport = async (productSpecs: string, images?: string[]): 
  */
 const generatePromptMatrix = async (productSpecs: string, images: string[] | undefined, type: 'PAIN_POINT' | 'SCENARIO'): Promise<PromptSet> => {
   const prompt = type === 'PAIN_POINT' 
-    ? "基于用户痛点，生成 10 个极高质量的主图拍摄方案提示词。" 
-    : "基于产品场景，生成 10 个极具氛围感的主图拍摄方案提示词。";
+    ? "基于用户痛点，生成 5 个极高质量的主图拍摄方案提示词。" 
+    : "基于产品场景，生成 5 个极具氛围感的主图拍摄方案提示词。";
   
-  return await multimodalAdapter.generateStructuredContent({
-    systemInstruction: CREATIVE_SYSTEM_INSTRUCTION,
-    prompt: `${prompt}\n产品信息：\n${productSpecs}`,
-    schema: {
-      type: Type.OBJECT,
-      properties: {
-        category: { type: Type.STRING },
-        prompts: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              planTitle: { type: Type.STRING },
-              fullPrompt: { type: Type.STRING }
+  try {
+    return await multimodalAdapter.generateStructuredContent({
+      systemInstruction: CREATIVE_SYSTEM_INSTRUCTION,
+      prompt: `${prompt}\n产品信息：\n${productSpecs}`,
+      schema: {
+        type: Type.OBJECT,
+        properties: {
+          category: { type: Type.STRING },
+          prompts: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                planTitle: { type: Type.STRING },
+                fullPrompt: { type: Type.STRING }
+              }
             }
           }
         }
-      }
-    },
-    // 创意裂变任务仅需一张图识别产品主体
-    images: images && images.length > 0 ? [images[0]] : undefined, 
-    model: 'gemini-3-pro-preview'
-  });
+      },
+      // 仅需前 3 张图进行识别
+      images: images && images.length > 0 ? images.slice(0, 3) : undefined, 
+      model: 'gemini-3.1-pro'
+    });
+  } catch (e) {
+    console.error("Prompt Matrix Error:", e);
+    throw e;
+  }
 };
 
 /**
  * 核心整改：多路串行策划引擎 (带宽与稳定性优化版)
- * 通过从并行改为串行，彻底消除瞬时并发导致的 Failed to fetch 报错
  */
 export const generatePlan = async (
   productSpecs: string, 
@@ -139,23 +203,26 @@ export const generatePlan = async (
   onStep?: (step: string) => void
 ): Promise<AppResponse> => {
   try {
+    // 限制图片数量，防止 payload 过大
+    const limitedImages = imagesBase64?.slice(0, 3);
+
     // 步骤 1：深度策略分析
     if (onStep) onStep('分析产品基因，生成洞察报告...');
-    const strategy = await generateStrategyReport(productSpecs, imagesBase64);
+    const strategy = await generateStrategyReport(productSpecs, limitedImages);
 
     // 步骤 2：痛点视觉方案
     if (onStep) onStep('构思用户痛点解决方案 (1/2)...');
-    const painPoints = await generatePromptMatrix(productSpecs, imagesBase64, 'PAIN_POINT');
+    const painPoints = await generatePromptMatrix(productSpecs, limitedImages, 'PAIN_POINT');
 
     // 步骤 3：场景视觉方案
     if (onStep) onStep('同步场景美学策划方案 (2/2)...');
-    const scenario = await generatePromptMatrix(productSpecs, imagesBase64, 'SCENARIO');
+    const scenario = await generatePromptMatrix(productSpecs, limitedImages, 'SCENARIO');
 
-    return {
+    return normalizeResponse({
       analysis: strategy,
       painPointPrompts: painPoints,
       scenarioPrompts: [scenario]
-    };
+    });
   } catch (error: any) {
     console.error("Sequential planning engine failed:", error);
     throw new Error(`策划引擎在分段处理时遇到错误: ${error.message}`);

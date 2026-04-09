@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GeneratedImage } from '../types';
 import { Download, RefreshCcw, Maximize2, X, Copy, ExternalLink, CheckCircle2, AlertCircle } from 'lucide-react';
+import { formatDownloadName } from '@/services/utils/namingUtils';
 
 interface ImageGalleryProps {
   items: GeneratedImage[];
@@ -24,7 +25,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      const fileName = `grsai-${item.prompt.slice(0, 10).replace(/\s+/g, '-')}-${item.id.slice(-4)}.png`;
+      const fileName = formatDownloadName('app1', item.prompt, item.id);
       link.download = fileName;
       
       document.body.appendChild(link);

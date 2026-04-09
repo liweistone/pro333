@@ -1,7 +1,5 @@
 {
-  "name": "万象商业全案 - 电商视觉一体化解决方案",
-  "description": "基于深度市场分析的电商主图策划与AI视觉生成工具，支持 4K 高清生图与多图参考。",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "name": "万像智造20260401香蕉3.1",
+  "description": "企业级 AI 电商视觉生产系统，集策略策划、3D 姿态重塑与规模化裂变于一体。添加流光智造尺寸选项",
+  "requestFramePermissions": []
 }

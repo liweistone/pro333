@@ -1,61 +1,15 @@
 
 import { API_CONFIG } from "@/apiConfig";
+import { MultimodalAdapter } from '@/services/adapters/multimodalAdapter';
 import { ApimartProvider } from '@/services/providers/apimartProvider';
 
+const multimodalAdapter = new MultimodalAdapter();
 const provider = new ApimartProvider();
 
-/**
- * 净化 AI 响应：移除 <think> 或 <thinking> 标签及其内部内容
- */
-const stripThinkingTags = (text: string): string => {
-  if (!text) return "";
-  // 匹配 <think>...</think> 或 <thinking>...</thinking>，不分大小写，跨行匹配
-  return text.replace(/<(think|thinking)>[\s\S]*?<\/\1>/gi, "").trim();
-};
-
-/**
- * 鲁棒的 JSON 提取工具
- * 能够从复杂的 AI 响应（包含 Markdown、思考标签等）中精准提取 JSON 数组
- */
-const extractJSON = (text: string): any[] => {
-  try {
-    // 1. 预处理：移除 thinking 标签和其他干扰项
-    let cleanText = stripThinkingTags(text);
-    
-    // 2. 尝试提取 Markdown 代码块
-    const codeBlockMatch = cleanText.match(/```(?:json)?([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      cleanText = codeBlockMatch[1].trim();
-    }
-
-    // 3. 核心提取：寻找最外层的方括号 []
-    const start = cleanText.indexOf('[');
-    const end = cleanText.lastIndexOf(']');
-    
-    if (start !== -1 && end !== -1 && end > start) {
-      const jsonStr = cleanText.substring(start, end + 1);
-      return JSON.parse(jsonStr);
-    }
-    
-    throw new Error("未找到有效 JSON 数组");
-  } catch (e) {
-    console.warn("JSON 自动提取失败，启用兜底策略:", e);
-    // 兜底策略：如果分析失败，返回通用的默认槽位，保证用户能继续操作
-    return [
-      { id: "slot_subject", name: "核心主体" },
-      { id: "slot_background", name: "背景环境" },
-      { id: "slot_text", name: "装饰文字" }
-    ];
-  }
-};
-
 export const extractTextFromImage = async (model: string, imageUrl: string) => {
-  const targetModel = 'gemini-3-pro-preview';
   try {
-    const res = await provider.analyzeWithMultimodal("请提取海报中的核心文案，直接输出文本，不要包含任何格式说明。", imageUrl, targetModel);
-    const data = res.data || res;
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    return stripThinkingTags(rawText);
+    const res = await multimodalAdapter.analyzeContent("请提取海报中的核心文案，直接输出文本，不要包含任何格式说明。", imageUrl);
+    return res.content || "";
   } catch (e) {
     console.error("OCR 提取失败", e);
     return "";
@@ -63,7 +17,6 @@ export const extractTextFromImage = async (model: string, imageUrl: string) => {
 };
 
 export const identifyVisualElements = async (model: string, imageUrl: string) => {
-  const targetModel = 'gemini-3-pro-preview';
   const prompt = `
     角色：专业视觉设计师。
     任务：分析这张海报，识别出画面中所有可以被"替换"的视觉元素（Visual Assets）。
@@ -81,13 +34,19 @@ export const identifyVisualElements = async (model: string, imageUrl: string) =>
   `;
   
   try {
-    const res = await provider.analyzeWithMultimodal(prompt, imageUrl, targetModel);
-    const data = res.data || res;
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-    return extractJSON(content);
+    const result = await multimodalAdapter.generateStructuredContent({
+      systemInstruction: "你是一位专业视觉设计师。",
+      prompt,
+      images: [imageUrl]
+    });
+    return Array.isArray(result) ? result : [];
   } catch (e) {
     console.error("元素识别服务异常", e);
-    return extractJSON(""); // 触发兜底
+    return [
+      { id: "slot_subject", name: "核心主体" },
+      { id: "slot_background", name: "背景环境" },
+      { id: "slot_text", name: "装饰文字" }
+    ];
   }
 };
 
@@ -99,7 +58,6 @@ export interface PosterScheme {
 }
 
 export const analyzePoster = async (model: string, styleImage: string, assets: any[], copyText: string): Promise<PosterScheme[]> => {
-  const targetModel = 'gemini-3-pro-preview';
   const prompt = `
     角色：顶级商业海报视觉总监。
     任务：基于提供的海报原型，策划 3 套差异化的视觉重构方案。
@@ -136,11 +94,12 @@ ${assets.map((a, i) => {
   `;
 
   try {
-    const res = await provider.analyzeWithMultimodal(prompt, [styleImage, ...assets.filter(a => a.data).map(a => a.data)], targetModel);
-    const data = res.data || res;
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-    const cleanText = stripThinkingTags(rawText);
-    return extractJSON(cleanText);
+    const result = await multimodalAdapter.generateStructuredContent({
+      systemInstruction: "你是一位顶级商业海报视觉总监。",
+      prompt,
+      images: [styleImage, ...assets.filter(a => a.data).map(a => a.data)]
+    });
+    return Array.isArray(result) ? result : [];
   } catch (e: any) {
     console.error("方案生成失败", e);
     return [];

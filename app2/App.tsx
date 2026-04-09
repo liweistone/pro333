@@ -8,6 +8,7 @@ import SmartBatchGenerator from './components/SmartBatchGenerator';
 import { AspectRatio, ImageSize, GeneratedImage, GenerationConfig } from './types';
 import { createGenerationTask, checkTaskStatus } from './visionService';
 import JSZip from 'jszip';
+import { formatZipName, formatInternalFileName } from '@/services/utils/namingUtils';
 
 const App: React.FC = () => {
   const [promptsText, setPromptsText] = useState('');
@@ -133,8 +134,7 @@ const App: React.FC = () => {
           if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
           
           const blob = await response.blob();
-          const safeBaseName = sanitizeFilename(item.prompt) || '电商主图';
-          const fileName = `${safeBaseName}-${item.id.slice(-4)}.png`;
+          const fileName = formatInternalFileName('app2', item.id);
           zip.file(fileName, blob);
         } catch (e) {
           console.error(`下载图片失败: ${item.url}`, e);
@@ -146,7 +146,7 @@ const App: React.FC = () => {
       const blobUrl = window.URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `裂变大师-批量导出-${new Date().getTime()}.zip`;
+      link.download = formatZipName('app2');
       link.click();
       window.URL.revokeObjectURL(blobUrl);
     } catch (error: any) {

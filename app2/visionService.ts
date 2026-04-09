@@ -17,7 +17,7 @@ export const createGenerationTask = async (
       prompt,
       {
         ...config,
-        model: config.model || 'gemini-3-pro-image-preview'
+        model: config.model || 'gemini-3.1-flash-image-preview'
       },
       referenceImages
     );

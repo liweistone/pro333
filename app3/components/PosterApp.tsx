@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { analyzePoster, generatePoster, getResultById, extractTextFromImage, identifyVisualElements, PosterScheme } from '../services/apiService';
 import { Image as ImageIcon, Type, Sparkles, CheckCircle2, AlertCircle, Loader2, Download, ScanSearch, X, Palette, Zap, Eye, Settings2, Layers } from 'lucide-react';
 import FileSaver from 'file-saver';
+import { formatDownloadName } from '@/services/utils/namingUtils';
 
 const CHAT_MODELS = [
   { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (高精度分析)' }
@@ -60,7 +61,7 @@ const PosterApp: React.FC = () => {
   const [status, setStatus] = useState("");
   const [schemes, setSchemes] = useState<PosterScheme[]>([]);
   const [taskList, setTaskList] = useState<GenerationTask[]>([]);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewTask, setPreviewTask] = useState<GenerationTask | null>(null);
 
   const styleInputRef = useRef<HTMLInputElement>(null);
   const slotInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
@@ -306,8 +307,8 @@ const PosterApp: React.FC = () => {
                   </div>
                 ) : task.status === 'succeeded' ? (
                   <div className="w-full h-full relative">
-                    <img src={task.resultUrl} className="w-full h-full object-contain cursor-pointer transition-transform duration-700 hover:scale-105" onClick={() => setPreviewImageUrl(task.resultUrl!)} />
-                    <button onClick={() => setPreviewImageUrl(task.resultUrl!)} className="absolute inset-0 bg-slate-900/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"><Eye size={24} className="text-white" /></button>
+                    <img src={task.resultUrl} className="w-full h-full object-contain cursor-pointer transition-transform duration-700 hover:scale-105" onClick={() => setPreviewTask(task)} />
+                    <button onClick={() => setPreviewTask(task)} className="absolute inset-0 bg-slate-900/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"><Eye size={24} className="text-white" /></button>
                     <div className="absolute bottom-4 right-4 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white"><CheckCircle2 size={14} /></div>
                   </div>
                 ) : <div className="text-center p-6 space-y-2">
@@ -322,11 +323,15 @@ const PosterApp: React.FC = () => {
         </div>
       </section>
 
-      {previewImageUrl && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-8 animate-in fade-in" onClick={() => setPreviewImageUrl(null)}>
-          <button className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors" onClick={() => setPreviewImageUrl(null)}><X size={48} /></button>
-          <img src={previewImageUrl} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()} />
-          <button onClick={(e) => { e.stopPropagation(); FileSaver.saveAs(previewImageUrl, 'Poster_Lab.png'); }} className="absolute bottom-12 bg-white text-slate-900 px-10 py-4 rounded-full font-black text-sm hover:scale-105 transition-all shadow-2xl flex items-center gap-3"><Download size={20} /> 保存至本地</button>
+      {previewTask && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-8 animate-in fade-in" onClick={() => setPreviewTask(null)}>
+          <button className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors" onClick={() => setPreviewTask(null)}><X size={48} /></button>
+          <img src={previewTask.resultUrl} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()} />
+          <button onClick={(e) => { 
+            e.stopPropagation(); 
+            const fileName = formatDownloadName('app3', previewTask.prompt, previewTask.id);
+            FileSaver.saveAs(previewTask.resultUrl!, fileName); 
+          }} className="absolute bottom-12 bg-white text-slate-900 px-10 py-4 rounded-full font-black text-sm hover:scale-105 transition-all shadow-2xl flex items-center gap-3"><Download size={20} /> 保存至本地</button>
         </div>
       )}
     </div>

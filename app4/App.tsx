@@ -7,6 +7,7 @@ import ImageConfig from './components/ImageConfig';
 import PromptInput from './components/PromptInput';
 import ImageGallery from './components/ImageGallery';
 import JSZip from 'jszip';
+import { formatZipName, formatInternalFileName, formatReportName } from '@/services/utils/namingUtils';
 import { 
   BarChart3, 
   ImageIcon, 
@@ -158,9 +159,9 @@ const App: React.FC = () => {
   const handleAnalysisImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files) as File[];
-      const remainingCount = 20 - analysisImages.length;
+      const remainingCount = 3 - analysisImages.length;
       if (remainingCount <= 0) {
-        alert('最多只能添加 20 张分析图');
+        alert('分析阶段最多只能添加 3 张参考图');
         return;
       }
       
@@ -171,7 +172,7 @@ const App: React.FC = () => {
         const urls = await Promise.all(promises);
 
         setAnalysisImages(prev => {
-          const combined = [...prev, ...urls].slice(0, 20);
+          const combined = [...prev, ...urls].slice(0, 3);
           setReferenceImages(refPrev => {
             const syncUrls = urls.filter(u => !refPrev.includes(u));
             return [...refPrev, ...syncUrls].slice(0, 20);
@@ -258,7 +259,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `市场分析报告_${new Date().toISOString().slice(0,10)}.txt`;
+    link.download = formatReportName('app4', '市场分析报告');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -287,7 +288,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `电商主图策划方案_${new Date().toISOString().slice(0,10)}.txt`;
+    link.download = formatReportName('app4', '电商主图策划方案');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -422,8 +423,7 @@ const App: React.FC = () => {
           const response = await fetch(item.url!, { mode: 'cors' });
           if (!response.ok) throw new Error(`HTTP 错误 ${response.status}`);
           const blob = await response.blob();
-          const safeBaseName = sanitizeFilename(item.prompt) || 'grsai-image';
-          const fileName = `${safeBaseName}-${item.id.slice(-4)}.png`;
+          const fileName = formatInternalFileName('app4', item.id);
           zip.file(fileName, blob);
         } catch (e) {
           console.error(`下载单张图片失败 [${item.id}]: ${item.url}`, e);
@@ -438,7 +438,7 @@ const App: React.FC = () => {
       const blobUrl = window.URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `Batch-Images-${new Date().getTime()}.zip`;
+      link.download = formatZipName('app4');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -491,7 +491,7 @@ const App: React.FC = () => {
                   <h2 className="text-lg font-semibold flex items-center gap-2"><FileText className="w-5 h-5 text-indigo-500" /> 产品输入</h2>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-slate-700">产品实拍图 ({analysisImages.length}/20)</label>
+                      <label className="text-sm font-medium text-slate-700">产品实拍图 ({analysisImages.length}/3)</label>
                       {analysisImages.length > 0 && <button onClick={() => setAnalysisImages([])} className="text-[10px] text-rose-500 font-bold hover:underline">清空全部</button>}
                     </div>
                     <div onClick={() => fileInputRef.current?.click()} className={`relative min-h-[160px] border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden ${analysisImages.length > 0 ? 'border-indigo-200 bg-slate-50/50' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'}`}>
@@ -511,7 +511,7 @@ const App: React.FC = () => {
                               </div>
                             </div>
                           ))}
-                          {analysisImages.length < 20 && <div className="aspect-square flex items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white hover:border-indigo-400 transition-colors"><Plus className="w-5 h-5 text-slate-400" /></div>}
+                          {analysisImages.length < 3 && <div className="aspect-square flex items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white hover:border-indigo-400 transition-colors"><Plus className="w-5 h-5 text-slate-400" /></div>}
                         </div>
                       )}
                     </div>

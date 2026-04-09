@@ -32,5 +32,5 @@ export interface ApimartGenerationRequest {
   size: string;
   resolution: string;
   n: number;
-  image_urls?: { url: string }[];
+  image_urls?: string[];
 }

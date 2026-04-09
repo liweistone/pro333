@@ -1,7 +1,9 @@
 
 import React, { useState } from 'react';
 import { GeneratedImage } from '../types';
-import { Eye, Download, RefreshCcw, AlertCircle, CheckCircle2, ImageIcon } from 'lucide-react';
+import { Eye, Download, RefreshCcw, AlertCircle, CheckCircle2, ImageIcon, X, Maximize2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { formatDownloadName } from '@/services/utils/namingUtils';
 
 interface ImageGalleryProps {
   items: GeneratedImage[];
@@ -10,6 +12,7 @@ interface ImageGalleryProps {
 
 const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
   const handleDownload = async (item: GeneratedImage) => {
     if (!item.url) return;
@@ -21,9 +24,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
       const link = document.createElement('a');
       link.href = blobUrl;
       
-      // 生成友好的文件名
-      const safePrompt = item.prompt.slice(0, 15).replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '-');
-      const fileName = `grsai-${safePrompt}-${item.id.slice(-4)}.png`;
+      const fileName = formatDownloadName('app4', item.prompt, item.id);
       
       link.download = fileName;
       document.body.appendChild(link);
@@ -116,14 +117,21 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
                 <img 
                   src={item.url} 
                   alt={item.prompt} 
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 cursor-pointer"
                   loading="lazy"
+                  onClick={() => setSelectedImageUrl(item.url)}
                 />
                 {/* 悬停遮罩 */}
-                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center">
-                   <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full flex items-center gap-2">
+                <div 
+                  className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center cursor-pointer"
+                  onClick={() => setSelectedImageUrl(item.url)}
+                >
+                   <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full flex items-center gap-2 mb-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
                       <span className="text-[10px] text-white font-bold tracking-widest uppercase">4K 超高清分辨率</span>
+                   </div>
+                   <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
+                     <Maximize2 className="w-5 h-5 text-white" />
                    </div>
                 </div>
               </>
@@ -154,7 +162,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
             {item.status === 'succeeded' && (
               <div className="grid grid-cols-2 gap-2 mt-1 pt-3 border-t border-slate-50 animate-in slide-in-from-bottom-2 duration-300">
                 <button 
-                  onClick={() => window.open(item.url!, '_blank')}
+                  onClick={() => setSelectedImageUrl(item.url)}
                   className="flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-50 text-slate-700 text-[10px] font-bold border border-slate-100 hover:bg-slate-100 transition-all active:scale-95"
                 >
                   <Eye className="w-3.5 h-3.5" />
@@ -181,6 +189,41 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items, onRetry }) => {
           </div>
         </div>
       ))}
+
+      {/* 图片查看模态窗 */}
+      <AnimatePresence>
+        {selectedImageUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm"
+            onClick={() => setSelectedImageUrl(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full max-h-[90vh] flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedImageUrl(null)}
+                className="absolute -top-12 right-0 md:-right-12 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                title="关闭"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              
+              <img
+                src={selectedImageUrl}
+                alt="预览图"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-white/10"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
