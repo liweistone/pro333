@@ -61,13 +61,7 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
     }
   }, [prefillData]);
 
-  // 提示词输入框自适应高度
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [prompt]);
+  // 移除提示词输入框自适应高度逻辑，改为固定容器高度内部滚动
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -281,7 +275,7 @@ const App9LumiereStation: React.FC<App9LumiereStationProps> = ({ isModal, prefil
                       onChange={(e) => setPrompt(e.target.value)}
                       disabled={isGenerating}
                       placeholder={activeTab === 'image' ? '输入绘图提示词，或留空基于上方素材进行风格一致性重构...' : '当前功能正在内部测试中，敬请期待...'}
-                      className="w-full flex-1 text-lg font-bold text-slate-800 placeholder:text-slate-200 outline-none resize-none bg-transparent leading-relaxed overflow-hidden"
+                      className="w-full flex-1 text-lg font-bold text-slate-800 placeholder:text-slate-200 outline-none resize-none bg-transparent leading-relaxed overflow-y-auto pr-2 custom-scrollbar"
                   />
                   
                   {/* 徽章改为右下角静态，不再遮挡文字 */}
