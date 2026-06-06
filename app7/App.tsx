@@ -1,0 +1,548 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Search, 
+  Copy, 
+  CheckCircle2, 
+  Eye, 
+  Zap, 
+  LayoutGrid, 
+  Database, 
+  Heart, 
+  MousePointer2, 
+  Layers, 
+  RefreshCcw,
+  Filter,
+  Loader2,
+  ExternalLink,
+  Sparkles
+} from 'lucide-react';
+import { Preset } from './types';
+
+// 模块级持久缓存
+let cachedPresets: Preset[] = [];
+let cachedCategories: { [id: string]: string } = {};
+let hasInitialized = false;
+
+const PAGE_SIZE = 24; 
+const BASE_PROD_URL = 'https://aideator.top';
+
+// 偏好权重配置
+const WEIGHTS = {
+  USE: 2,      // 点击“生成同款”权重
+  FAVORITE: 5, // 收藏权重（预留）
+  VIEW: 1      // 查看权重
+};
+
+// 获取分类权重表
+const getCategoryWeights = (): Record<string, number> => {
+  try {
+    const data = localStorage.getItem('PRESET_CATEGORY_WEIGHTS');
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+};
+
+// 更新分类权重
+const updateCategoryWeight = (categoryId: string, weight: number) => {
+  const weights = getCategoryWeights();
+  weights[categoryId] = (weights[categoryId] || 0) + weight;
+  localStorage.setItem('PRESET_CATEGORY_WEIGHTS', JSON.stringify(weights));
+};
+
+// 新增：预设效果图预览组件
+const PresetEffectImages: React.FC<{ 
+  presetId: string; 
+  getApiUrl: (endpoint: string) => string;
+  getImageUrl: (path: string | null) => string;
+}> = ({ presetId, getApiUrl, getImageUrl }) => {
+  const [images, setImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const fetchImages = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(getApiUrl(`/api/presets/${presetId}/effect-images`), {
+          mode: 'cors',
+          credentials: 'omit'
+        });
+        if (response.ok) {
+          const rawData = await response.json();
+          const list = Array.isArray(rawData) 
+            ? rawData 
+            : (rawData.data || rawData.results || rawData.images || rawData.presets || []);
+          
+          const urls = list
+            .map((img: any) => {
+              const path = img.url || img.image_url || img.image || img.path;
+              return path ? getImageUrl(path) : null;
+            })
+            .filter((url: any) => typeof url === 'string' && url.length > 0) as string[];
+          
+          setImages(urls.slice(0, 5)); // 预览显示前5张
+        }
+      } catch (e) {
+        console.error("Failed to fetch effect images for preview", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImages();
+  }, [isVisible, presetId]);
+
+  if (!isVisible && !loading && images.length === 0) {
+      return <div ref={containerRef} className="h-12" />;
+  }
+
+  if (images.length === 0 && !loading) return null;
+
+  return (
+    <div ref={containerRef} className="flex gap-1.5 px-4 py-2 overflow-x-auto no-scrollbar scroll-smooth">
+      {loading ? (
+        <div className="flex gap-1.5 animate-pulse">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="w-10 h-10 bg-white/5 rounded-lg shrink-0" />
+          ))}
+        </div>
+      ) : (
+        images.map((url, idx) => (
+          <div key={idx} className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/10 hover:border-indigo-500/50 transition-all hover:scale-110 shrink-0 shadow-sm">
+            <img 
+              src={url} 
+              className="w-full h-full object-cover" 
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
+
+interface App7PresetHubProps {
+  onUsePreset?: (data: { prompt: string; negative?: string; images: string[] }) => void;
+}
+
+const App7PresetHub: React.FC<App7PresetHubProps> = ({ onUsePreset }) => {
+  const [presets, setPresets] = useState<Preset[]>(cachedPresets);
+  const [activeCategory, setActiveCategory] = useState<string>('全部');
+  const [categories, setCategories] = useState<{ [id: string]: string }>(cachedCategories);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  
+  const [loading, setLoading] = useState(false);
+  const [isNextPageLoading, setIsNextPageLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const isFetchingRef = useRef(false);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  const getApiUrl = (endpoint: string) => {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${BASE_PROD_URL}${cleanEndpoint}`;
+  };
+
+  const getImageUrl = (path: string | null) => {
+    if (!path) return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
+    if (path.startsWith('http')) return path;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    if (normalizedPath.startsWith('/api/images/public/')) {
+        return `${BASE_PROD_URL}${normalizedPath}`;
+    }
+    return `${BASE_PROD_URL}/api/images/public${normalizedPath}`;
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const loadData = async (isAppend: boolean = false) => {
+    if (isFetchingRef.current) return;
+    if (isAppend && !hasMore) return;
+
+    isFetchingRef.current = true;
+    if (isAppend) setIsNextPageLoading(true);
+    else setLoading(true);
+
+    setHasError(false);
+    const currentOffset = isAppend ? presets.length : 0;
+
+    try {
+      let endpoint = `/api/presets?limit=${PAGE_SIZE}&offset=${currentOffset}`;
+      if (activeCategory !== '全部') endpoint += `&category_id=${activeCategory}`;
+      // 方案优化：更换参数名为 search，对齐 API 规范
+      if (debouncedSearchQuery) endpoint += `&search=${encodeURIComponent(debouncedSearchQuery)}`;
+
+      const res = await fetch(getApiUrl(endpoint));
+      if (res.ok) {
+          const data = await res.json();
+          let list = Array.isArray(data) ? data : (data.presets || data.results || data.data || []);
+          
+          // 方案优化：千人千面前端模拟排序
+          if (activeCategory === '全部' && !debouncedSearchQuery) {
+            const weights = getCategoryWeights();
+            // 找出权重最高的分类（前2名）
+            const topCategories = Object.entries(weights)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 2)
+              .map(item => item[0]);
+
+            list = list.map((p: any) => ({
+              ...p,
+              _is_recommended: topCategories.includes(p.category_id)
+            })).sort((a: any, b: any) => {
+              // 推荐的排在前面
+              if (a._is_recommended && !b._is_recommended) return -1;
+              if (!a._is_recommended && b._is_recommended) return 1;
+              return 0;
+            });
+          }
+
+          // 方案优化：增加前端本地过滤兜底，防止后端忽略搜索参数
+          if (debouncedSearchQuery && list.length > 0) {
+            const query = debouncedSearchQuery.toLowerCase();
+            const filteredList = list.filter((p: Preset) => 
+              (p.title && p.title.toLowerCase().includes(query)) || 
+              (p.positive && p.positive.toLowerCase().includes(query)) ||
+              (p.description && p.description.toLowerCase().includes(query))
+            );
+            // 如果过滤后结果变少了，说明后端可能没过滤，我们使用过滤后的结果
+            // 如果过滤后结果没变，说明后端可能已经过滤了，或者确实都匹配
+            if (filteredList.length < list.length) {
+              list = filteredList;
+            }
+          }
+
+          if (isAppend) {
+              setPresets(prev => {
+                  const existingIds = new Set(prev.map(p => p.id));
+                  const uniqueNewList = list.filter((p: Preset) => !existingIds.has(p.id));
+                  const merged = [...prev, ...uniqueNewList];
+                  if (activeCategory === '全部' && !debouncedSearchQuery) cachedPresets = merged;
+                  return merged;
+              });
+          } else {
+              setPresets(list);
+              if (activeCategory === '全部' && !debouncedSearchQuery) cachedPresets = list;
+          }
+          setHasMore(list.length >= PAGE_SIZE);
+      } else {
+          setHasError(true);
+      }
+    } catch (e) {
+      setHasError(true);
+    } finally {
+      isFetchingRef.current = false;
+      setLoading(false);
+      setIsNextPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const initCategories = async () => {
+        if (Object.keys(cachedCategories).length > 0) {
+            setCategories(cachedCategories);
+            return;
+        }
+        try {
+            const catRes = await fetch(getApiUrl('/api/presets/categories'));
+            if (catRes.ok) {
+                const catData = await catRes.json();
+                cachedCategories = catData;
+                setCategories(catData);
+            }
+        } catch (e) {}
+    };
+    initCategories();
+
+    if (!hasInitialized) {
+        if (cachedPresets.length === 0) loadData(false);
+        hasInitialized = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeCategory === '全部' && !debouncedSearchQuery && presets.length === cachedPresets.length && presets.length > 0) return;
+    setHasMore(true);
+    loadData(false);
+  }, [activeCategory, debouncedSearchQuery]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !isFetchingRef.current && presets.length > 0) {
+          loadData(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, presets.length]);
+
+  const handleUseInspiration = async (preset: Preset) => {
+    try {
+      // 1. 调用接口获取该预设的所有效果图
+      const response = await fetch(getApiUrl(`/api/presets/${preset.id}/effect-images`), {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const rawData = await response.json();
+      console.log("Preset effect images raw data:", rawData);
+      
+      // 2. 健壮性解析：检查多种可能的返回结构 (直接数组, .data, .results)
+      const list = Array.isArray(rawData) 
+        ? rawData 
+        : (rawData.data || rawData.results || rawData.images || rawData.presets || []);
+      
+      // 3. 提取并转换 URL：按顺序读取，支持多种字段名 (url, image_url, image, path)
+      const effectUrls = list
+        .map((img: any) => {
+          const path = img.url || img.image_url || img.image || img.path;
+          return path ? getImageUrl(path) : null;
+        })
+        .filter((url: any) => typeof url === 'string' && url.length > 0) as string[];
+
+      // 4. 将数据传递给大厅 (排除封面图，仅使用效果图)
+      if (onUsePreset) {
+        onUsePreset({
+          prompt: preset.positive,
+          negative: preset.negative || undefined,
+          images: effectUrls
+        });
+      }
+      
+      // 同时上报使用统计
+      fetch(getApiUrl(`/api/presets/${preset.id}/use`), { method: 'POST' }).catch(() => {});
+      
+      // 千人千面：更新分类权重
+      updateCategoryWeight(preset.category_id, WEIGHTS.USE);
+      
+      // 新增：立即更新本地状态，让用户看到数据变化
+      setPresets(prev => prev.map(p => 
+        p.id === preset.id 
+          ? { ...p, view_count: (p.view_count || 0) + 1 } 
+          : p
+      ));
+    } catch (error) {
+      console.error("获取效果图失败，执行降级逻辑:", error);
+      // 降级处理：如果获取失败，则不填充参考图
+      if (onUsePreset) {
+        onUsePreset({ 
+          prompt: preset.positive, 
+          negative: preset.negative || undefined,
+          images: [] 
+        });
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#02040a] text-slate-200 flex flex-col font-sans selection:bg-indigo-500/30">
+      <header className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center px-8 justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-4">
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
+            <Database className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tighter text-white uppercase italic">D1 Preset Hub</h1>
+            <div className="flex items-center gap-1.5 mt-0.5">
+               <span className={`w-1.5 h-1.5 ${hasError ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'} rounded-full`}></span>
+               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{hasError ? 'Link Lost' : 'Cloud Synchronized'}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+           <div className="relative w-80 group hidden md:block">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 group-focus-within:text-indigo-400" />
+              <input 
+                type="text"
+                placeholder="搜索预设关键词..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && loadData(false)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs outline-none focus:border-indigo-500/50 focus:bg-white/10 transition-all"
+              />
+           </div>
+           <button onClick={() => loadData(false)} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-[10px] font-black transition-all shadow-lg shadow-indigo-600/10 active:scale-95 uppercase tracking-widest">
+             <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+             Sync
+           </button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        <aside className="w-64 border-r border-white/5 p-6 space-y-8 bg-slate-950/20 shrink-0">
+          <div>
+            <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-4 px-2">Library</h2>
+            <nav className="flex flex-col gap-2.5">
+              <button
+                onClick={() => setActiveCategory('全部')}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px] font-bold transition-all uppercase tracking-widest ${activeCategory === '全部' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}`}
+              >
+                <LayoutGrid className="w-[18px] h-[18px]" /> 全部预设
+              </button>
+              {Object.entries(categories).map(([id, name]) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveCategory(id)}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px] font-bold transition-all uppercase tracking-widest ${activeCategory === id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'}`}
+                >
+                  <Layers className="w-[18px] h-[18px]" /> {name}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </aside>
+
+        <main className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#02040a]">
+          {loading && presets.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center space-y-6 opacity-40">
+               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Fetching Data...</span>
+            </div>
+          ) : presets.length === 0 ? (
+             <div className="h-full flex flex-col items-center justify-center text-slate-800 space-y-4">
+                <Layers className="w-12 h-12 opacity-10" />
+                <p className="text-sm font-black uppercase tracking-widest opacity-20 italic">Empty Archive</p>
+                <button onClick={() => {setSearchQuery(''); loadData(false);}} className="text-indigo-500 font-black text-[9px] hover:underline uppercase tracking-widest px-4 py-1.5 border border-indigo-500/20 rounded-full">Reset</button>
+             </div>
+          ) : (
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">
+                {presets.map(preset => (
+                  <div key={preset.id} className="group bg-slate-900/40 border border-white/5 rounded-xl overflow-hidden hover:border-indigo-500/30 transition-all duration-500 flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1">
+                    <div className="relative aspect-[3/4] bg-black overflow-hidden border-b border-white/5">
+                      {/* 推荐勋章 */}
+                      {(preset as any)._is_recommended && (
+                        <div className="absolute top-3 left-3 z-40 px-2 py-1 bg-indigo-500 text-white text-[8px] font-black uppercase tracking-widest rounded-lg shadow-xl flex items-center gap-1 animate-in fade-in zoom-in duration-500">
+                          <Sparkles className="w-2.5 h-2.5" /> AI 推荐
+                        </div>
+                      )}
+                      
+                      <img 
+                        src={getImageUrl(preset.image)} 
+                        className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 saturate-150 scale-110 pointer-events-none" 
+                        aria-hidden="true"
+                        referrerPolicy="no-referrer"
+                      />
+                      
+                      <img 
+                        src={getImageUrl(preset.image)} 
+                        className="relative z-10 w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-all duration-700" 
+                        loading="lazy" 
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400";
+                        }}
+                      />
+                      
+                      <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-60"></div>
+                      
+                      {/* Hover Action: Click to trigger modal instead of just copy */}
+                      <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px] bg-indigo-600/10">
+                          <button 
+                            onClick={() => handleUseInspiration(preset)} 
+                            className="px-5 py-2.5 bg-white text-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 ring-4 ring-white/10"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            生成同款
+                          </button>
+                      </div>
+                    </div>
+
+                    {/* 新增：参考图预览区域 */}
+                    <PresetEffectImages 
+                      presetId={preset.id} 
+                      getApiUrl={getApiUrl} 
+                      getImageUrl={getImageUrl} 
+                    />
+
+                    <div className="p-4 flex-1 flex flex-col">
+                      <h3 className="text-[11px] font-black text-white/90 group-hover:text-indigo-400 transition-colors truncate mb-1" title={preset.title}>
+                        {preset.title}
+                      </h3>
+
+                      <div className="my-3 p-3 bg-slate-950/60 border border-white/5 rounded-xl h-24 overflow-hidden relative cursor-default group/desc">
+                         <p className="text-[10px] leading-relaxed text-slate-400 font-medium line-clamp-4 italic transition-colors group-hover/desc:text-slate-300">
+                            {preset.description || preset.positive}
+                         </p>
+                         <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-950/80 to-transparent pointer-events-none"></div>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-auto">
+                         <div className="flex gap-3">
+                            <div className="flex items-center gap-1" title="Views">
+                              <Eye className="w-3 h-3 text-slate-600" />
+                              <span className="text-[9px] text-slate-500 font-bold tabular-nums">{preset.view_count || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1" title="Favorites">
+                              <Heart className="w-3 h-3 text-slate-600" />
+                              <span className="text-[9px] text-slate-500 font-bold tabular-nums">{preset.favorite_count || 0}</span>
+                            </div>
+                         </div>
+                         <button 
+                           onClick={() => {
+                             navigator.clipboard.writeText(preset.positive);
+                             setCopiedId(preset.id);
+                             setTimeout(() => setCopiedId(null), 2000);
+                           }}
+                           className="text-slate-700 hover:text-indigo-400 transition-colors"
+                         >
+                           {copiedId === preset.id ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                         </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div ref={loaderRef} className="py-12 flex flex-col items-center justify-center h-24">
+                {isNextPageLoading ? (
+                  <div className="flex items-center gap-2 text-indigo-400 animate-pulse">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Streaming more assets...</span>
+                  </div>
+                ) : !hasMore && presets.length > 0 ? (
+                  <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-700">End of Archive</span>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default App7PresetHub;

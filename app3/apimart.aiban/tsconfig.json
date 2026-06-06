@@ -1,0 +1,7 @@
+
+{
+  "compilerOptions": {},
+  "include": [],
+  "exclude": ["*"],
+  "display": "DEPRECATED"
+}

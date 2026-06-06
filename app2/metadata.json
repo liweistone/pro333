@@ -1,0 +1,8 @@
+
+{
+  "name": "电商批量裂变大师",
+  "description": "专业电商批量绘图工具，基于高性能 Vision AI 引擎，支持智能特征分析、多机位一致性裂变出图。",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
